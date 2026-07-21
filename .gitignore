@@ -1,0 +1,4 @@
+/node_modules
+/.claude
+/frontend/node_modules
+/backend/vendor

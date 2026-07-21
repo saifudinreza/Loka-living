@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <defs>
+    <linearGradient id="gradlk-spot-linen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ECE4D4"/>
+      <stop offset="1" stop-color="#F6F1E8"/>
+    </linearGradient>
+    <pattern id="grainlk-spot-linen" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(135)">
+      <line x1="0" y1="0" x2="0" y2="14" stroke="#1B1A14" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="480" height="480" fill="url(#gradlk-spot-linen)"/>
+  <rect width="480" height="480" fill="url(#grainlk-spot-linen)"/>
+  <g transform="translate(0,0) scale(1)">
+    <ellipse cx="240" cy="384" rx="130" ry="16" fill="#1B1A14" opacity="0.08"/>
+    <rect x="150" y="120" width="180" height="170" rx="70" fill="none" stroke="#1B1A14" stroke-width="3"/>
+    <rect x="120" y="228" width="30" height="94" rx="15" fill="#ECE4D4" stroke="#1B1A14" stroke-width="3"/>
+    <rect x="330" y="228" width="30" height="94" rx="15" fill="#ECE4D4" stroke="#1B1A14" stroke-width="3"/>
+    <rect x="142" y="250" width="196" height="66" rx="20" fill="#9A968A" opacity="0.92"/>
+    <line x1="165" y1="316" x2="150" y2="378" stroke="#1B1A14" stroke-width="6" stroke-linecap="round"/>
+    <line x1="315" y1="316" x2="330" y2="378" stroke="#1B1A14" stroke-width="6" stroke-linecap="round"/>
+    <line x1="195" y1="316" x2="188" y2="378" stroke="#1B1A14" stroke-width="6" stroke-linecap="round"/>
+    <line x1="285" y1="316" x2="292" y2="378" stroke="#1B1A14" stroke-width="6" stroke-linecap="round"/>
+  </g></svg>

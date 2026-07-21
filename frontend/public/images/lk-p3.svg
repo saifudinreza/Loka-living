@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <defs>
+    <linearGradient id="gradlk-p3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ECE4D4"/>
+      <stop offset="1" stop-color="#F6F1E8"/>
+    </linearGradient>
+    <pattern id="grainlk-p3" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(135)">
+      <line x1="0" y1="0" x2="0" y2="14" stroke="#1B1A14" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="480" height="480" fill="url(#gradlk-p3)"/>
+  <rect width="480" height="480" fill="url(#grainlk-p3)"/>
+  <g>
+    <ellipse cx="240" cy="372" rx="150" ry="15" fill="#1B1A14" opacity="0.08"/>
+    <rect x="80" y="212" width="320" height="28" rx="10" fill="#9B6B3A" stroke="#1B1A14" stroke-width="2.5"/>
+    <rect x="104" y="240" width="20" height="112" fill="#1B1A14" opacity="0.85"/>
+    <rect x="356" y="240" width="20" height="112" fill="#1B1A14" opacity="0.85"/>
+  </g></svg>

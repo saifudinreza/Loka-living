@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <defs>
+    <linearGradient id="gradlk-trust2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ECE4D4"/>
+      <stop offset="1" stop-color="#F6F1E8"/>
+    </linearGradient>
+    <pattern id="grainlk-trust2" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(135)">
+      <line x1="0" y1="0" x2="0" y2="14" stroke="#1B1A14" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="480" height="480" fill="url(#gradlk-trust2)"/>
+  <rect width="480" height="480" fill="url(#grainlk-trust2)"/><g><path d="M20 66 Q 240 44 460 66" fill="none" stroke="#5A3D2B" stroke-width="3" opacity="0.25"/><path d="M20 92 Q 240 70 460 92" fill="none" stroke="#9B6B3A" stroke-width="4" opacity="0.35"/><path d="M20 142 Q 240 120 460 142" fill="none" stroke="#9B6B3A" stroke-width="5" opacity="0.45"/><path d="M20 168 Q 240 146 460 168" fill="none" stroke="#5A3D2B" stroke-width="3" opacity="0.55"/><path d="M20 218 Q 240 196 460 218" fill="none" stroke="#9B6B3A" stroke-width="4" opacity="0.25"/><path d="M20 244 Q 240 222 460 244" fill="none" stroke="#9B6B3A" stroke-width="5" opacity="0.35"/><path d="M20 294 Q 240 272 460 294" fill="none" stroke="#5A3D2B" stroke-width="3" opacity="0.45"/><path d="M20 320 Q 240 298 460 320" fill="none" stroke="#9B6B3A" stroke-width="4" opacity="0.55"/><path d="M20 370 Q 240 348 460 370" fill="none" stroke="#9B6B3A" stroke-width="5" opacity="0.25"/><path d="M20 396 Q 240 374 460 396" fill="none" stroke="#5A3D2B" stroke-width="3" opacity="0.35"/></g></svg>

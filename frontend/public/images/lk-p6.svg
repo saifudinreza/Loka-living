@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <defs>
+    <linearGradient id="gradlk-p6" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ECE4D4"/>
+      <stop offset="1" stop-color="#F6F1E8"/>
+    </linearGradient>
+    <pattern id="grainlk-p6" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(135)">
+      <line x1="0" y1="0" x2="0" y2="14" stroke="#1B1A14" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="480" height="480" fill="url(#gradlk-p6)"/>
+  <rect width="480" height="480" fill="url(#grainlk-p6)"/>
+  <g>
+    <ellipse cx="240" cy="396" rx="110" ry="13" fill="#1B1A14" opacity="0.08"/>
+    <rect x="150" y="66" width="180" height="320" rx="10" fill="none" stroke="#1B1A14" stroke-width="3"/>
+    <line x1="150" y1="146" x2="330" y2="146" stroke="#1B1A14" stroke-width="2.5"/>
+    <line x1="150" y1="220" x2="330" y2="220" stroke="#1B1A14" stroke-width="2.5"/>
+    <line x1="150" y1="300" x2="330" y2="300" stroke="#1B1A14" stroke-width="2.5"/>
+    <rect x="168" y="130" width="11" height="14" fill="#55603A" opacity="0.9"/><rect x="183" y="122" width="11" height="22" fill="#9B6B3A" opacity="0.9"/><rect x="198" y="114" width="11" height="30" fill="#5A3D2B" opacity="0.9"/><rect x="213" y="130" width="11" height="14" fill="#ECE4D4" opacity="0.9"/><rect x="228" y="122" width="11" height="22" fill="#9B6B3A" opacity="0.9"/>
+    <rect x="168" y="284" width="11" height="14" fill="#9B6B3A" opacity="0.9"/><rect x="183" y="276" width="11" height="22" fill="#ECE4D4" opacity="0.9"/><rect x="198" y="268" width="11" height="30" fill="#55603A" opacity="0.9"/><rect x="213" y="284" width="11" height="14" fill="#9B6B3A" opacity="0.9"/>
+  </g></svg>

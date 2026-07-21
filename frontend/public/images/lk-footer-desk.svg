@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <defs>
+    <linearGradient id="gradfooter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ECE4D4"/>
+      <stop offset="1" stop-color="#F6F1E8"/>
+    </linearGradient>
+    <pattern id="grainfooter" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(135)">
+      <line x1="0" y1="0" x2="0" y2="14" stroke="#1B1A14" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="480" height="480" fill="url(#gradfooter)"/>
+  <rect width="480" height="480" fill="url(#grainfooter)"/>
+  <g>
+    <ellipse cx="240" cy="372" rx="150" ry="15" fill="#1B1A14" opacity="0.08"/>
+    <rect x="90" y="230" width="300" height="20" rx="6" fill="#9B6B3A" stroke="#1B1A14" stroke-width="2"/>
+    <line x1="110" y1="250" x2="106" y2="360" stroke="#1B1A14" stroke-width="6" stroke-linecap="round"/>
+    <line x1="370" y1="250" x2="374" y2="360" stroke="#1B1A14" stroke-width="6" stroke-linecap="round"/>
+    <rect x="150" y="170" width="90" height="58" rx="4" fill="#1B1A14" opacity="0.85"/>
+    <rect x="156" y="176" width="78" height="42" rx="2" fill="#F6F1E8"/>
+    <line x1="265" y1="228" x2="265" y2="150" stroke="#55603A" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="265" cy="140" rx="22" ry="14" fill="#55603A" opacity="0.85"/>
+  </g></svg>
