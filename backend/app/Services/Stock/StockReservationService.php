@@ -8,7 +8,6 @@ use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
-
 class StockReservationService
 {
     /**
@@ -115,6 +114,45 @@ class StockReservationService
                 'subtotal_amount'  => $subtotalAmount,
                 'currency'         => 'IDR',
             ];
+        });
+    }
+
+    public function release(Order $order): void
+    {
+        DB::transaction(function () use ($order) {
+            // --- Langkah 1: Load items & lock variant rows ---
+            // load items dulu, baru lock variants — urut berdasar ID biar gak deadlock
+            $items = $order->items()->get();
+
+            $variantIds = $items->pluck('product_variant_id');
+
+            $variants = ProductVariant::whereIn('id', $variantIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            // --- Langkah 2: Kembalikan stok ---
+            foreach ($items as $item) {
+                $variant = $variants->get($item->product_variant_id);
+
+                if (! $variant) {
+                    // variant mungkin udah dihapus — skip, jgn throw
+                    // karena ini operasi release, lebih baik lewati daripada gagal total
+                    continue;
+                }
+
+                // Reserved → Available
+                $variant->decrement('stock_reserved', $item->qty);
+                $variant->increment('stock_available', $item->qty);
+            }
+
+            // --- Langkah 3: Update status order ---
+            // expired — bukan cancelled, karena cancelled bisa manual by admin
+            $order->update([
+                'status' => 'expired',
+                'reserved_until' => null,
+            ]);
         });
     }
 }

@@ -25,8 +25,9 @@ Next.js 14 (frontend/, Vercel)  <-- REST -->  Laravel 11 API (belum dibuat)  <--
 Prinsip kunci: Next.js **tidak pernah** panggil Midtrans/Stripe/Cargo API langsung dari client — selalu lewat Laravel API. Validasi harga & stok wajib di server, bukan di client.
 
 **Struktur repo saat ini:**
-- `frontend/` — Next.js 14 (App Router), TypeScript, Tailwind, Zustand, react-hook-form + zod, `@google/model-viewer`, `motion` (Framer Motion). Ini git repo sendiri (`.git` ada di dalam `frontend/`), root project belum jadi git repo.
-- `backend/` — Laravel, folder fresh install (bukan `loka-living-api/` seperti disebut sesi-sesi sebelumnya — itu ternyata hilang, lihat catatan di bawah). Belum ada `.git` di dalamnya.
+- Git repo ada di **root project** (`C:/CODINGAN/full stack/Loka-Living`), bukan di `frontend/`.
+- `frontend/` — Next.js 14 (App Router), TypeScript, Tailwind, Zustand, react-hook-form + zod, `@google/model-viewer`, `motion` (Framer Motion)
+- `backend/` — Laravel 11 API (fresh install, dikerjakan ulang dari nol karena implementasi sebelumnya hilang)
 
 ## 3. Status Sekarang (per 2026-07-20)
 
@@ -43,9 +44,13 @@ Sedang di **Fase 1 — MVP**.
 - ✅ `routes/api.php` + `bootstrap/app.php` (api routing diaktifkan)
 - ✅ `CheckoutController::init()` — fixed property name + try-catch RuntimeException → 422
 - ✅ `StockReservationService::init()` — full logic: FOR UPDATE lock, stock decrement, draft order creation, 30m TTL
-- ❌ `ReleaseExpiredReservations` — job & handler belum dibuat
-- ❌ Semua Services, Controllers, Jobs, routes lain — belum ada
-- **Rencana urutan rebuild:** (1-3) ✅ migration, models, seeder (**selesai**), (4) ✅ `checkout/init` + stock reservation (**selesai — user review & paham**), (5) ❌ `ReleaseExpiredReservations`, (6) `checkout/shipping-rate` + `CargoRateService`, (7) `checkout/confirm` + `MidtransService` (sandbox), (8) webhook Midtrans + signature verification (critical logic — mode belajar).
+- ✅ `ReleaseExpiredReservations` — job & handler (ReleaseOrderReservation + ReleaseExpiredReservations + scheduler)
+- ✅ `CargoRateService` — manual rate table (5 zona berdasarkan provinsi, base_rate + per_kg)
+- ✅ `MidtransService` — Snap API integration (transaction_details, item_details, customer_details)
+- ✅ `CheckoutController` — `init`, `shippingRate`, `confirm` (lengkap dengan re-validasi harga server-side)
+- ✅ `routes/api.php` — semua 3 endpoint checkout terdaftar
+- ✅ Webhook Midtrans handler — `PaymentWebhookController` lengkap (verifySignature → idempotency → cari order → validasi amount → map status → DB transaction: update order, upsert PaymentTransaction, OrderStatusLog, release stock, mark processed) + route terdaftar
+- **Rencana urutan rebuild:** (1-3) ✅ migration, models, seeder (**selesai**), (4) ✅ `checkout/init` + stock reservation (**selesai — user review & paham**), (5) ✅ `ReleaseExpiredReservations` (**selesai — reviewed & fixed**), (6) ✅ `checkout/shipping-rate` + `CargoRateService` (**selesai — reviewed & fixed**), (7) ✅ `checkout/confirm` + `MidtransService` (**selesai — reviewed & fixed**), (8) webhook Midtrans + signature verification (critical logic — mode belajar).
 - **Cara kerja disepakati:** Claude jelaskan + tulis kode di terminal (dengan komen penjelasan), user mengetik sendiri ke file. Jangan pakai Write/Edit langsung ke file migration/model/controller kecuali diminta.
 
 **Frontend (`frontend/src/`):**
@@ -57,8 +62,7 @@ Belum dikerjakan (lihat urutan di `PLANNING-LokaLiving.md` §3):
 - Halaman Collections + filter, Product Detail Page penuh
 - Sambungkan frontend ke API produk/checkout Laravel (ganti `lib/products.ts` dummy)
 - Checkout single-screen UI, integrasi Google Maps Autocomplete
-- Integrasi Midtrans Snap (sandbox) + webhook handler + idempotency
-- Job `ReleaseExpiredReservations`
+- Webhook Midtrans handler + signature verification + idempotency (item #8)
 
 ## 4. Yang TIDAK BOLEH Dipangkas / Dilonggarkan
 

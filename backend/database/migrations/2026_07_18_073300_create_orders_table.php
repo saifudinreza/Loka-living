@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
 
             // untuk guest tracking (link "cek status pesanan"), bukan sequental ID
-            $table->string('order_token, 64')->unique();
+            $table->string('order_token', 64)->unique();
 
             $table->string('guest_email', 150)->nullable();
             $table->string('guest_phone', 20)->nullable();
