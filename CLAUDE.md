@@ -29,7 +29,7 @@ Prinsip kunci: Next.js **tidak pernah** panggil Midtrans/Stripe/Cargo API langsu
 - `frontend/` — Next.js 14 (App Router), TypeScript, Tailwind, Zustand, react-hook-form + zod, `@google/model-viewer`, `motion` (Framer Motion)
 - `backend/` — Laravel 11 API (fresh install, dikerjakan ulang dari nol karena implementasi sebelumnya hilang)
 
-## 3. Status Sekarang (per 2026-07-20)
+## 3. Status Sekarang (per 2026-07-25)
 
 Sedang di **Fase 1 — MVP**.
 
@@ -48,7 +48,8 @@ Sedang di **Fase 1 — MVP**.
 - ✅ `CargoRateService` — manual rate table (5 zona berdasarkan provinsi, base_rate + per_kg)
 - ✅ `MidtransService` — Snap API integration (transaction_details, item_details, customer_details)
 - ✅ `CheckoutController` — `init`, `shippingRate`, `confirm` (lengkap dengan re-validasi harga server-side)
-- ✅ `routes/api.php` — semua 3 endpoint checkout terdaftar
+- ✅ `routes/api.php` — semua 3 endpoint checkout + webhook terdaftar (fixed double prefix bug — Laravel 11 sudah prefix otomatis)
+- ✅ `ProductController` — `index()` (daftar produk aktif) + `show(slug)` (detail produk + varian) + routes terdaftar
 - ✅ Webhook Midtrans handler — `PaymentWebhookController` lengkap (verifySignature → idempotency → cari order → validasi amount → map status → DB transaction: update order, upsert PaymentTransaction, OrderStatusLog, release stock, mark processed) + route terdaftar
 - **Rencana urutan rebuild:** (1-3) ✅ migration, models, seeder (**selesai**), (4) ✅ `checkout/init` + stock reservation (**selesai — user review & paham**), (5) ✅ `ReleaseExpiredReservations` (**selesai — reviewed & fixed**), (6) ✅ `checkout/shipping-rate` + `CargoRateService` (**selesai — reviewed & fixed**), (7) ✅ `checkout/confirm` + `MidtransService` (**selesai — reviewed & fixed**), (8) webhook Midtrans + signature verification (critical logic — mode belajar).
 - **Cara kerja disepakati:** Claude jelaskan + tulis kode di terminal (dengan komen penjelasan), user mengetik sendiri ke file. Jangan pakai Write/Edit langsung ke file migration/model/controller kecuali diminta.
@@ -56,13 +57,15 @@ Sedang di **Fase 1 — MVP**.
 **Frontend (`frontend/src/`):**
 - Komponen homepage: `Hero`, `Navbar`, `Koleksi`, `Sorotan`, `Nilai`, `BaruTiba`, `Footer`, `ProductCard`, `PdpOverlay`, `Marquee`, `Parallax`, `Reveal`, `ScrollProgress`, `ImageSlot`, `Magnetic`, `Toast`
 - State: `cartStore.ts`, `pdpStore.ts`, `toastStore.ts` (Zustand)
-- Data produk masih hardcoded di `lib/products.ts` — **belum disambungkan ke API Laravel di atas**, ini next step natural setelah backend checkout matang.
+- ✅ `lib/api.ts` — API service layer (types, fetchApi, fetchProducts, fetchProductBySlug, mapApiProduct)
+- ✅ `ProductCard.tsx` — tambah prop `href` untuk navigasi ke route
+- Data produk masih hardcoded di `lib/products.ts` — **belum diganti**, tapi `mapApiProduct` siap dipakai
 
 Belum dikerjakan (lihat urutan di `PLANNING-LokaLiving.md` §3):
-- Halaman Collections + filter, Product Detail Page penuh
-- Sambungkan frontend ke API produk/checkout Laravel (ganti `lib/products.ts` dummy)
+- Halaman Collections + filter (app/collections/page.tsx)
+- Product Detail Page penuh (app/products/[slug]/page.tsx)
+- Sambungkan homepage ke API (ganti `lib/products.ts` dummy)
 - Checkout single-screen UI, integrasi Google Maps Autocomplete
-- Webhook Midtrans handler + signature verification + idempotency (item #8)
 
 ## 4. Yang TIDAK BOLEH Dipangkas / Dilonggarkan
 

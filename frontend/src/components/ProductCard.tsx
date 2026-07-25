@@ -6,8 +6,10 @@ import { formatPrice, productImage, type Product } from "@/lib/products";
 import { usePdpStore } from "@/lib/pdpStore";
 import { useCartStore } from "@/lib/cartStore";
 import { useToastStore } from "@/lib/toastStore";
+import { useRouter } from "next/navigation";
 
-export default function ProductCard({ product }: { product: Product }) {
+export default function ProductCard({ product, href }: { product: Product; href?: string }) {
+  const router = useRouter();
   const openPdp = usePdpStore((s) => s.open);
   const addItem = useCartStore((s) => s.addItem);
   const showToast = useToastStore((s) => s.show);
@@ -20,7 +22,10 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <motion.article
       layout
-      onClick={() => openPdp(product.id)}
+      onClick={() => {
+        if (href) router.push(href);
+        else openPdp(product.id);
+      }}
       className="group flex cursor-pointer flex-col gap-4"
       whileHover="hover"
       initial="rest"
