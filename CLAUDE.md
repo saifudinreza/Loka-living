@@ -65,9 +65,32 @@ Sedang di **Fase 1 — MVP**.
 - ✅ `app/products/[slug]/page.tsx` — Product Detail Page penuh (gambar + crossfade variant swatch, info, dimensi, CTA) dengan Navbar & Footer
 - Data produk masih hardcoded di `lib/products.ts` — **belum diganti**, tapi `mapApiProduct` siap dipakai
 
-Belum dikerjakan (lihat urutan di `PLANNING-LokaLiving.md` §3):
-- Sambungkan homepage ke API (ganti `lib/products.ts` dummy)
-- Checkout single-screen UI, integrasi Google Maps Autocomplete
+## Todo (daftar kerja — update tiap selesai)
+
+Urutan kerja: kerjakan berurutan, mode belajar untuk logic kritis.
+
+### Batch 1: Homepage → API (ganti hardcoded `lib/products.ts`)
+
+**Sesi 2026-07-26 — capaian:**
+- ✅ **Step 1** — Update `lib/api.ts`: tambah mapping `image_url` ke `mapApiProduct` (fix: optional chaining `v?`)
+- ✅ **Step 2** — `lib/products.ts`: hapus `PRODUCTS`, `VARIANTS`, `SPOTS`, `NEW_ARRIVAL_IDS`, `variantImage`, `findProduct`. Tersisa: `Category`, `Product` (+`image_url`), `Variant`, `FILTERS`, `formatPrice`, `productImage`
+
+**Lanjut di sesi berikutnya — Step 3:**
+- [ ] **Step 3** — Buat `app/HomeClient.tsx`: client component baru yg terima products sebagai props
+- [ ] **Step 4** — `app/page.tsx`: jadi async server component, fetch API, render `<HomeClient>`
+- [ ] **Step 5** — `components/Hero.tsx`: terima products & SPOTS sebagai props (SPOTS jadi konstanta lokal)
+- [ ] **Step 6** — `components/Koleksi.tsx`: terima products sebagai props
+- [ ] **Step 7** — `components/BaruTiba.tsx`: terima products + newArrivalSlugs sebagai props
+- [ ] **Step 8** — `components/Sorotan.tsx`: terima products + featuredSlug sebagai props
+- [ ] **Step 9** — `components/ProductCard.tsx`: update import type dari api.ts
+- [ ] **Step 10** — `components/PdpOverlay.tsx`: terima products array sebagai props
+- [ ] **Step 11** — `app/collections/page.tsx`: jadi server component, fetch dari API
+- [ ] **Step 12** — `app/products/[slug]/page.tsx`: fetch dari API langsung via slug
+- [ ] **Step 13** — Verifikasi: `npm run dev` jalan, homepage tampil dengan data API
+
+### Batch 2: Checkout Single-Screen UI
+
+- [ ] (detail menyusul saat sampai di sini)
 
 ## 4. Yang TIDAK BOLEH Dipangkas / Dilonggarkan
 

@@ -70,5 +70,6 @@ export function mapApiProduct(p: ApiProduct): Product {
     },
     desc: p.description,
     placeholder: p.name,
+    image_url: (v?.image_urls?.[0]) || `/images/lk-${p.id}.svg`,
   };
 }
