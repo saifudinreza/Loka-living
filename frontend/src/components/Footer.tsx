@@ -64,7 +64,7 @@ export default function Footer() {
             Temukan Jalan Anda
           </h3>
           <a href="#top" className="text-sm tracking-[0.02em]">Tentang Kami</a>
-          <a href="#koleksi" className="text-sm tracking-[0.02em]">Katalog</a>
+          <a href="/collections" className="text-sm tracking-[0.02em]">Katalog</a>
           <a href="#sorotan" className="text-sm tracking-[0.02em]">Penawaran Spesial</a>
           <a href="#footer" className="text-sm tracking-[0.02em]">Kontak</a>
         </div>

@@ -29,7 +29,7 @@ Prinsip kunci: Next.js **tidak pernah** panggil Midtrans/Stripe/Cargo API langsu
 - `frontend/` — Next.js 14 (App Router), TypeScript, Tailwind, Zustand, react-hook-form + zod, `@google/model-viewer`, `motion` (Framer Motion)
 - `backend/` — Laravel 11 API (fresh install, dikerjakan ulang dari nol karena implementasi sebelumnya hilang)
 
-## 3. Status Sekarang (per 2026-07-25)
+## 3. Status Sekarang (per 2026-07-26)
 
 Sedang di **Fase 1 — MVP**.
 
@@ -59,11 +59,13 @@ Sedang di **Fase 1 — MVP**.
 - State: `cartStore.ts`, `pdpStore.ts`, `toastStore.ts` (Zustand)
 - ✅ `lib/api.ts` — API service layer (types, fetchApi, fetchProducts, fetchProductBySlug, mapApiProduct)
 - ✅ `ProductCard.tsx` — tambah prop `href` untuk navigasi ke route
+- ✅ `app/collections/page.tsx` — halaman Collections dengan filter kategori (URL-based search params), grid produk, Navbar & Footer
+- ✅ Navbar link "Koleksi" diarahkan ke `/collections`
+- ✅ Homepage Koleksi section — ada link "Lihat Semua →" ke `/collections`
+- ✅ `app/products/[slug]/page.tsx` — Product Detail Page penuh (gambar + crossfade variant swatch, info, dimensi, CTA) dengan Navbar & Footer
 - Data produk masih hardcoded di `lib/products.ts` — **belum diganti**, tapi `mapApiProduct` siap dipakai
 
 Belum dikerjakan (lihat urutan di `PLANNING-LokaLiving.md` §3):
-- Halaman Collections + filter (app/collections/page.tsx)
-- Product Detail Page penuh (app/products/[slug]/page.tsx)
 - Sambungkan homepage ke API (ganti `lib/products.ts` dummy)
 - Checkout single-screen UI, integrasi Google Maps Autocomplete
 

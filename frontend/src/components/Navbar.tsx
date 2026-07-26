@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCartStore } from "@/lib/cartStore";
 
 const LINKS = [
-  { href: "#koleksi", label: "Koleksi" },
+  { href: "/collections", label: "Koleksi" },
   { href: "#baru", label: "Baru Tiba" },
   { href: "#sorotan", label: "Sorotan" },
   { href: "#nilai", label: "Brand Kami" },

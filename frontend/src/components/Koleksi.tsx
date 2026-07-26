@@ -24,15 +24,23 @@ export default function Koleksi() {
             <span className="absolute -top-[3px] right-0 h-1.5 w-1.5 rounded-full bg-wood" />
           </div>
         </Reveal>
-        <Reveal
-          className="disp justify-self-end text-right"
-          style={{
-            fontSize: "clamp(44px,7vw,104px)",
-            lineHeight: 0.9,
-            letterSpacing: "-0.04em",
-          }}
-        >
-          Koleksi
+        <Reveal className="justify-self-end text-right">
+          <h2
+            className="disp"
+            style={{
+              fontSize: "clamp(44px,7vw,104px)",
+              lineHeight: 0.9,
+              letterSpacing: "-0.04em",
+            }}
+          >
+            Koleksi
+          </h2>
+          <a
+            href="/collections"
+            className="mt-4 inline-block text-[13px] font-semibold tracking-[0.06em] text-olive underline-offset-4 hover:underline"
+          >
+            Lihat Semua →
+          </a>
         </Reveal>
       </div>
 
