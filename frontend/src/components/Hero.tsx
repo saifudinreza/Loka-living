@@ -6,12 +6,19 @@ import ImageSlot from "./ImageSlot";
 import { Reveal, RevealLines } from "./Reveal";
 import { Parallax } from "./Parallax";
 import { Magnetic } from "./Magnetic";
-import { PRODUCTS, SPOTS, formatPrice } from "@/lib/products";
+import { formatPrice } from "@/lib/products";
+import type { Product } from "@/lib/products";
 import { usePdpStore } from "@/lib/pdpStore";
 
-export default function Hero() {
+export default function Hero({ products }: { products: Product[] }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const openPdp = usePdpStore((s) => s.open);
+
+  const SPOTS = [
+    { top: "62%", left: "19%", slug: "kursi-santai-rukun" },
+    { top: "40%", left: "55%", slug: "meja-kopi-lestari" },
+    { top: "68%", left: "81%", slug: "bangku-panjang-sela" },
+  ];
 
   return (
     <>
@@ -52,12 +59,12 @@ export default function Hero() {
             <ImageSlot label="Foto ruang / hero furniture" src="/images/lk-hero.svg" />
           </Parallax>
           {SPOTS.map((s, i) => {
-            const p = PRODUCTS.find((x) => x.id === s.pid);
+            const p = products.find((x) => x.slug === s.slug);
             if (!p) return null;
             return (
               <div
-                key={s.pid}
-                onClick={() => openPdp(s.pid)}
+                key={s.slug}
+                onClick={() => openPdp(p.id)}
                 onMouseEnter={() => setHovered(i)}
                 onMouseLeave={() => setHovered(null)}
                 className="absolute z-[3] -translate-x-1/2 -translate-y-1/2 cursor-pointer"

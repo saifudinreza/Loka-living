@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useDragControls, type PanInfo } from "motion/react";
 import ImageSlot from "./ImageSlot";
-import { VARIANTS, findProduct, formatPrice, productImage } from "@/lib/products";
+import { formatPrice } from "@/lib/products";
+import type { Product } from "@/lib/products";
 import { usePdpStore } from "@/lib/pdpStore";
 import { useCartStore } from "@/lib/cartStore";
 import { useToastStore } from "@/lib/toastStore";
 
 const EASE = [0.19, 1, 0.22, 1] as const;
 
-export default function PdpOverlay() {
+export default function PdpOverlay({ products }: { products: Product[] }) {
   const openId = usePdpStore((s) => s.openId);
   const close = usePdpStore((s) => s.close);
   const addItem = useCartStore((s) => s.addItem);
@@ -18,7 +19,7 @@ export default function PdpOverlay() {
   const [mat, setMat] = useState(0);
   const dragControls = useDragControls();
 
-  const product = openId ? findProduct(openId) : undefined;
+  const product = openId ? products.find((p) => p.id === openId) : undefined;
 
   const handleDragEnd = (
     _e: MouseEvent | TouchEvent | PointerEvent,
@@ -93,7 +94,7 @@ export default function PdpOverlay() {
                 className="relative w-full overflow-hidden rounded-2xl bg-card"
                 style={{ aspectRatio: "4/5" }}
               >
-                <ImageSlot label={product.placeholder} src={productImage(product.id)} />
+                <ImageSlot label={product.placeholder} src={product.image_url} />
               </motion.div>
 
               <div>
@@ -139,7 +140,7 @@ export default function PdpOverlay() {
                     Material
                   </div>
                   <div className="flex flex-wrap gap-2.5">
-                    {VARIANTS.map((v, i) => {
+                    {product.variants.map((v, i) => {
                       const isActive = i === mat;
                       return (
                         <motion.button

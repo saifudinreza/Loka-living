@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import Navbar from "@/components/Navbar";
@@ -8,16 +9,25 @@ import { Reveal } from "@/components/Reveal";
 import ProductCard from "@/components/ProductCard";
 import Toast from "@/components/Toast";
 import ScrollProgress from "@/components/ScrollProgress";
-import { FILTERS, PRODUCTS } from "@/lib/products";
+import { FILTERS } from "@/lib/products";
+import type { Product } from "@/lib/products";
+import { fetchProducts, mapApiProduct } from "@/lib/api";
 
 export default function CollectionsPage() {
   const sp = useSearchParams();
   const active = sp.get("cat") ?? "Semua";
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    fetchProducts()
+      .then((api) => setProducts(api.map(mapApiProduct)))
+      .catch(() => setProducts([]));
+  }, []);
 
   const list =
     active === "Semua"
-      ? PRODUCTS
-      : PRODUCTS.filter((p) => p.cat === active);
+      ? products
+      : products.filter((p) => p.cat === active);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-bg">
@@ -78,7 +88,7 @@ export default function CollectionsPage() {
                 exit={{ opacity: 0, scale: 0.92 }}
                 transition={{ duration: 0.35, ease: [0.19, 1, 0.22, 1] }}
               >
-                <ProductCard product={item} href={`/products/${item.id}`} />
+                <ProductCard product={item} href={`/products/${item.slug}`} />
               </motion.div>
             ))}
           </AnimatePresence>

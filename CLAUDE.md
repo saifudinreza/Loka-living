@@ -29,7 +29,7 @@ Prinsip kunci: Next.js **tidak pernah** panggil Midtrans/Stripe/Cargo API langsu
 - `frontend/` — Next.js 14 (App Router), TypeScript, Tailwind, Zustand, react-hook-form + zod, `@google/model-viewer`, `motion` (Framer Motion)
 - `backend/` — Laravel 11 API (fresh install, dikerjakan ulang dari nol karena implementasi sebelumnya hilang)
 
-## 3. Status Sekarang (per 2026-07-26)
+## 3. Status Sekarang (per 2026-07-27)
 
 Sedang di **Fase 1 — MVP**.
 
@@ -55,38 +55,38 @@ Sedang di **Fase 1 — MVP**.
 - **Cara kerja disepakati:** Claude jelaskan + tulis kode di terminal (dengan komen penjelasan), user mengetik sendiri ke file. Jangan pakai Write/Edit langsung ke file migration/model/controller kecuali diminta.
 
 **Frontend (`frontend/src/`):**
-- Komponen homepage: `Hero`, `Navbar`, `Koleksi`, `Sorotan`, `Nilai`, `BaruTiba`, `Footer`, `ProductCard`, `PdpOverlay`, `Marquee`, `Parallax`, `Reveal`, `ScrollProgress`, `ImageSlot`, `Magnetic`, `Toast`
-- State: `cartStore.ts`, `pdpStore.ts`, `toastStore.ts` (Zustand)
-- ✅ `lib/api.ts` — API service layer (types, fetchApi, fetchProducts, fetchProductBySlug, mapApiProduct)
-- ✅ `ProductCard.tsx` — tambah prop `href` untuk navigasi ke route
-- ✅ `app/collections/page.tsx` — halaman Collections dengan filter kategori (URL-based search params), grid produk, Navbar & Footer
-- ✅ Navbar link "Koleksi" diarahkan ke `/collections`
-- ✅ Homepage Koleksi section — ada link "Lihat Semua →" ke `/collections`
-- ✅ `app/products/[slug]/page.tsx` — Product Detail Page penuh (gambar + crossfade variant swatch, info, dimensi, CTA) dengan Navbar & Footer
-- Data produk masih hardcoded di `lib/products.ts` — **belum diganti**, tapi `mapApiProduct` siap dipakai
+- ✅ **Semua data produk dari API** — tidak ada lagi hardcoded `PRODUCTS`/`VARIANTS`/`SPOTS`/`NEW_ARRIVAL_IDS`
+- ✅ Data mengalir: Laravel API → server component → `HomeClient` → child components (props)
+- ✅ `Product` type sekarang punya `slug`, `variants: ProductVariant[]`, `image_url`
+- ✅ `app/page.tsx` — async server component, fetch dari API
+- ✅ `app/HomeClient.tsx` — client wrapper yg render semua section
+- ✅ `components/Hero.tsx` — terima `products` prop, SPOTS konstanta lokal pake slug
+- ✅ `components/Koleksi.tsx` — terima `products` prop, filter di client
+- ✅ `components/BaruTiba.tsx` — terima `products` + `newArrivalSlugs` prop
+- ✅ `components/Sorotan.tsx` — terima `products` + `featuredSlug`, pake product.variants
+- ✅ `components/ProductCard.tsx` — pake `product.image_url`, type dari api.ts
+- ✅ `components/PdpOverlay.tsx` — terima `products` prop, pake product.variants
+- ✅ `app/collections/page.tsx` — fetch dari API via `useEffect`, filter by searchParams
+- ✅ `app/products/[slug]/page.tsx` — fetch `fetchProductBySlug`, variants dari API
 
 ## Todo (daftar kerja — update tiap selesai)
 
 Urutan kerja: kerjakan berurutan, mode belajar untuk logic kritis.
 
-### Batch 1: Homepage → API (ganti hardcoded `lib/products.ts`)
+### Batch 1: ✅ Homepage → API (selesai)
 
-**Sesi 2026-07-26 — capaian:**
-- ✅ **Step 1** — Update `lib/api.ts`: tambah mapping `image_url` ke `mapApiProduct` (fix: optional chaining `v?`)
-- ✅ **Step 2** — `lib/products.ts`: hapus `PRODUCTS`, `VARIANTS`, `SPOTS`, `NEW_ARRIVAL_IDS`, `variantImage`, `findProduct`. Tersisa: `Category`, `Product` (+`image_url`), `Variant`, `FILTERS`, `formatPrice`, `productImage`
-
-**Lanjut di sesi berikutnya — Step 3:**
-- [ ] **Step 3** — Buat `app/HomeClient.tsx`: client component baru yg terima products sebagai props
-- [ ] **Step 4** — `app/page.tsx`: jadi async server component, fetch API, render `<HomeClient>`
-- [ ] **Step 5** — `components/Hero.tsx`: terima products & SPOTS sebagai props (SPOTS jadi konstanta lokal)
-- [ ] **Step 6** — `components/Koleksi.tsx`: terima products sebagai props
-- [ ] **Step 7** — `components/BaruTiba.tsx`: terima products + newArrivalSlugs sebagai props
-- [ ] **Step 8** — `components/Sorotan.tsx`: terima products + featuredSlug sebagai props
-- [ ] **Step 9** — `components/ProductCard.tsx`: update import type dari api.ts
-- [ ] **Step 10** — `components/PdpOverlay.tsx`: terima products array sebagai props
-- [ ] **Step 11** — `app/collections/page.tsx`: jadi server component, fetch dari API
-- [ ] **Step 12** — `app/products/[slug]/page.tsx`: fetch dari API langsung via slug
-- [ ] **Step 13** — Verifikasi: `npm run dev` jalan, homepage tampil dengan data API
+**Sesi 2026-07-27 — capaian:**
+- ✅ **Step 3** — Buat `app/HomeClient.tsx`
+- ✅ **Step 4** — `app/page.tsx` jadi async server component + fetch API
+- ✅ **Step 5** — `Hero.tsx` terima products + SPOTS konstanta lokal
+- ✅ **Step 6** — `Koleksi.tsx` terima products prop
+- ✅ **Step 7** — `BaruTiba.tsx` terima products + newArrivalSlugs
+- ✅ **Step 8** — `Sorotan.tsx` terima products + featuredSlug, pake product.variants
+- ✅ **Step 9** — `ProductCard.tsx` pake image_url, type dari api
+- ✅ **Step 10** — `PdpOverlay.tsx` terima products, pake product.variants
+- ✅ **Step 11** — `collections/page.tsx` fetch dari API
+- ✅ **Step 12** — `products/[slug]/page.tsx` fetch dari API
+- ✅ **Step 13** — Verifikasi: TypeScript clean, build compiled sukses, API jalan
 
 ### Batch 2: Checkout Single-Screen UI
 

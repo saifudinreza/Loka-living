@@ -55,6 +55,7 @@ export function mapApiProduct(p: ApiProduct): Product {
   const v = p.variants[0];
   return {
     id: p.id,
+    slug: p.slug,
     name: p.name,
     cat: CATEGORY_MAP[p.category] || "Kursi",
     mat: v?.material || "",
@@ -71,5 +72,10 @@ export function mapApiProduct(p: ApiProduct): Product {
     desc: p.description,
     placeholder: p.name,
     image_url: (v?.image_urls?.[0]) || `/images/lk-${p.id}.svg`,
+    variants: p.variants.map((v) => ({
+      label: v.material,
+      color: v.color_hex,
+      image_url: v.image_urls[0] || "",
+    })),
   };
 }

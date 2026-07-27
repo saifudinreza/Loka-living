@@ -4,13 +4,14 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Reveal } from "./Reveal";
 import ProductCard from "./ProductCard";
-import { FILTERS, PRODUCTS } from "@/lib/products";
+import { FILTERS } from "@/lib/products";
+import type { Product } from "@/lib/products";
 
-export default function Koleksi() {
+export default function Koleksi({ products }: { products: Product[] }) {
   const [active, setActive] = useState<(typeof FILTERS)[number]>("Semua");
 
   const list =
-    active === "Semua" ? PRODUCTS : PRODUCTS.filter((p) => p.cat === active);
+    active === "Semua" ? products : products.filter((p) => p.cat === active);
 
   return (
     <section id="koleksi" className="px-[5vw] pt-[130px]">

@@ -6,15 +6,18 @@ import { Reveal } from "./Reveal";
 import { Parallax } from "./Parallax";
 import { Magnetic } from "./Magnetic";
 import ImageSlot from "./ImageSlot";
-import { PRODUCTS, VARIANTS, formatPrice, variantImage } from "@/lib/products";
+import { formatPrice } from "@/lib/products";
+import type { Product } from "@/lib/products";
 import { useCartStore } from "@/lib/cartStore";
 import { useToastStore } from "@/lib/toastStore";
 
-export default function Sorotan() {
+export default function Sorotan({ products, featuredSlug }: { products: Product[]; featuredSlug: string }) {
   const [variant, setVariant] = useState(0);
-  const spotProduct = PRODUCTS[0];
+  const highlight = products.find((p) => p.slug === featuredSlug);
   const addItem = useCartStore((s) => s.addItem);
   const showToast = useToastStore((s) => s.show);
+
+  if (!highlight) return null;
 
   return (
     <section id="sorotan" className="px-[5vw] pt-[130px]">
@@ -49,8 +52,8 @@ export default function Sorotan() {
                 transition={{ duration: 0.4, ease: "easeInOut" }}
               >
                 <ImageSlot
-                  label={VARIANTS[variant].placeholder}
-                  src={variantImage(VARIANTS[variant].slot)}
+                  label={highlight.variants[variant]?.label || highlight.name}
+                  src={highlight.variants[variant]?.image_url || highlight.image_url}
                 />
               </motion.div>
             </AnimatePresence>
@@ -69,27 +72,27 @@ export default function Sorotan() {
             className="disp mt-3.5"
             style={{ fontSize: "clamp(30px,4.4vw,52px)", lineHeight: 0.96, letterSpacing: "-0.03em" }}
           >
-            Kursi Santai Rukun
+            {highlight.name}
           </h3>
           <p className="mt-4 max-w-[440px] text-[15px] leading-[1.6] text-soft">
-            Rangka rotan anyaman tangan dengan bantalan linen yang bisa
-            dilepas-cuci. Satu kursi, banyak wajah — pilih material yang
-            paling menyatu dengan ruang Anda.
+            {highlight.desc}
           </p>
           <div className="mt-6 flex items-baseline gap-3">
             <span className="disp text-[40px] tracking-[-0.02em]">
-              {formatPrice(spotProduct.price)}
+              {formatPrice(highlight.price)}
             </span>
-            <span className="text-[15px] text-soft line-through">
-              {formatPrice(spotProduct.old!)}
-            </span>
+            {highlight.old && (
+              <span className="text-[15px] text-soft line-through">
+                {formatPrice(highlight.old)}
+              </span>
+            )}
           </div>
           <div className="mt-[26px]">
             <div className="mb-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-soft">
-              Material — {VARIANTS[variant].label}
+              Material — {highlight.variants[variant]?.label || highlight.mat}
             </div>
             <div className="flex gap-3.5">
-              {VARIANTS.map((v, i) => (
+              {highlight.variants.map((v, i) => (
                 <button
                   key={v.label}
                   title={v.label}
@@ -117,7 +120,7 @@ export default function Sorotan() {
             </Magnetic>
             <button
               onClick={() => {
-                addItem(spotProduct.id);
+                addItem(highlight.id);
                 showToast("Ditambahkan ke keranjang");
               }}
               className="rounded-full border border-ink px-8 py-4 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink transition-colors hover:bg-ink hover:text-bg"

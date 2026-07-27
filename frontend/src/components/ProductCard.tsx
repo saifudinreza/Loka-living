@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import ImageSlot from "./ImageSlot";
-import { formatPrice, productImage, type Product } from "@/lib/products";
+import { formatPrice, type Product } from "@/lib/products";
 import { usePdpStore } from "@/lib/pdpStore";
 import { useCartStore } from "@/lib/cartStore";
 import { useToastStore } from "@/lib/toastStore";
@@ -41,7 +41,7 @@ export default function ProductCard({ product, href }: { product: Product; href?
           variants={{ rest: { scale: 1 }, hover: { scale: 1.06 } }}
           transition={{ type: "spring", stiffness: 220, damping: 28 }}
         >
-          <ImageSlot label={product.placeholder} src={productImage(product.id)} />
+          <ImageSlot label={product.placeholder} src={product.image_url} />
         </motion.div>
         {product.badge && (
           <span className="absolute left-3.5 top-3.5 rounded-full bg-[rgba(246,241,232,0.86)] px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink">

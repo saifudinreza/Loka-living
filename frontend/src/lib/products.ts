@@ -1,7 +1,14 @@
 export type Category = "Kursi" | "Meja" | "Lemari" | "Rak";
 
+export interface ProductVariant {
+  label: string;
+  color: string;
+  image_url: string;
+}
+
 export interface Product {
   id: string;
+  slug: string;
   name: string;
   cat: Category;
   mat: string;
@@ -14,13 +21,7 @@ export interface Product {
   desc: string;
   placeholder: string;
   image_url: string;
-}
-
-export interface Variant {
-  label: string;
-  color: string;
-  placeholder: string;
-  slot: string;
+  variants: ProductVariant[];
 }
 
 export function productImage(id: string): string {

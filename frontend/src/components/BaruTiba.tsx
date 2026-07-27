@@ -3,16 +3,17 @@
 import { motion } from "motion/react";
 import { Reveal, RevealGroup, RevealItem } from "./Reveal";
 import ImageSlot from "./ImageSlot";
-import { NEW_ARRIVAL_IDS, PRODUCTS, formatPrice, productImage } from "@/lib/products";
+import { formatPrice } from "@/lib/products";
+import type { Product } from "@/lib/products";
 import { usePdpStore } from "@/lib/pdpStore";
 import { useCartStore } from "@/lib/cartStore";
 import { useToastStore } from "@/lib/toastStore";
 
-export default function BaruTiba() {
+export default function BaruTiba({ products, newArrivalSlugs }: { products: Product[]; newArrivalSlugs: string[] }) {
   const openPdp = usePdpStore((s) => s.open);
   const addItem = useCartStore((s) => s.addItem);
   const showToast = useToastStore((s) => s.show);
-  const items = NEW_ARRIVAL_IDS.map((id) => PRODUCTS.find((p) => p.id === id)!);
+  const items = newArrivalSlugs.map((slug) => products.find((p) => p.slug === slug)!).filter(Boolean);
 
   return (
     <section id="baru" className="px-[5vw] pt-[130px]">
@@ -40,7 +41,7 @@ export default function BaruTiba() {
             className="flex cursor-pointer items-center gap-5 rounded-2xl border border-transparent p-4 transition-colors hover:border-line"
           >
             <div className="h-[120px] w-[120px] flex-none overflow-hidden rounded-[10px] bg-card">
-              <ImageSlot label={item.placeholder} src={productImage(item.id)} />
+              <ImageSlot label={item.placeholder} src={item.image_url} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[15px] font-medium text-ink">{item.name}</div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import Navbar from "@/components/Navbar";
@@ -9,7 +9,9 @@ import ImageSlot from "@/components/ImageSlot";
 import Toast from "@/components/Toast";
 import ScrollProgress from "@/components/ScrollProgress";
 import { Reveal } from "@/components/Reveal";
-import { VARIANTS, findProduct, formatPrice, productImage, variantImage } from "@/lib/products";
+import { formatPrice } from "@/lib/products";
+import type { Product } from "@/lib/products";
+import { fetchProductBySlug, mapApiProduct } from "@/lib/api";
 import { useCartStore } from "@/lib/cartStore";
 import { useToastStore } from "@/lib/toastStore";
 
@@ -21,8 +23,13 @@ export default function ProductDetailPage() {
   const addItem = useCartStore((s) => s.addItem);
   const showToast = useToastStore((s) => s.show);
   const [mat, setMat] = useState(0);
+  const [product, setProduct] = useState<Product | null>(null);
 
-  const product = findProduct(slug);
+  useEffect(() => {
+    fetchProductBySlug(slug)
+      .then((api) => setProduct(mapApiProduct(api)))
+      .catch(() => setProduct(null));
+  }, [slug]);
 
   if (!product) {
     return (
@@ -69,8 +76,8 @@ export default function ProductDetailPage() {
                 transition={{ duration: 0.4, ease: "easeInOut" }}
               >
                 <ImageSlot
-                  label={VARIANTS[mat].placeholder}
-                  src={variantImage(VARIANTS[mat].slot)}
+                  label={product.variants[mat]?.label || product.name}
+                  src={product.variants[mat]?.image_url || product.image_url}
                 />
               </motion.div>
             </AnimatePresence>
@@ -116,10 +123,10 @@ export default function ProductDetailPage() {
 
             <div className="mt-7">
               <div className="mb-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-soft">
-                Material — {VARIANTS[mat].label}
+                Material — {product.variants[mat]?.label || product.mat}
               </div>
               <div className="flex flex-wrap gap-2.5">
-                {VARIANTS.map((v, i) => {
+                {product.variants.map((v, i) => {
                   const isActive = i === mat;
                   return (
                     <motion.button
