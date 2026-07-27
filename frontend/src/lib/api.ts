@@ -73,6 +73,7 @@ export function mapApiProduct(p: ApiProduct): Product {
     placeholder: p.name,
     image_url: (v?.image_urls?.[0]) || `/images/lk-${p.id}.svg`,
     variants: p.variants.map((v) => ({
+      id: v.id,
       label: v.material,
       color: v.color_hex,
       image_url: v.image_urls[0] || "",

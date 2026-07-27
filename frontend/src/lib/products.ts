@@ -1,6 +1,7 @@
 export type Category = "Kursi" | "Meja" | "Lemari" | "Rak";
 
 export interface ProductVariant {
+  id: string;
   label: string;
   color: string;
   image_url: string;
