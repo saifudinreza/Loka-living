@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { Reveal } from "./Reveal";
 import { Parallax } from "./Parallax";
@@ -16,6 +17,7 @@ export default function Sorotan({ products, featuredSlug }: { products: Product[
   const highlight = products.find((p) => p.slug === featuredSlug);
   const addItem = useCartStore((s) => s.addItem);
   const showToast = useToastStore((s) => s.show);
+  const router = useRouter();
 
   if (!highlight) return null;
 
@@ -112,7 +114,9 @@ export default function Sorotan({ products, featuredSlug }: { products: Product[
           <div className="mt-8 flex flex-wrap gap-3">
             <Magnetic className="inline-block">
               <button
-                onClick={() => showToast("Membuka checkout instan…")}
+                onClick={() =>
+                  router.push(`/checkout?vid=${highlight.variants[variant]?.id}&qty=1`)
+                }
                 className="rounded-full bg-olive px-8 py-4 text-[13px] font-semibold uppercase tracking-[0.06em] text-bg transition-colors hover:bg-olive-d"
               >
                 Beli Langsung

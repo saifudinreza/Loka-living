@@ -172,7 +172,9 @@ export default function ProductDetailPage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <motion.button
-                onClick={() => showToast("Membuka checkout instan…")}
+                onClick={() =>
+                  router.push(`/checkout?vid=${product.variants[mat]?.id}&qty=1`)
+                }
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}

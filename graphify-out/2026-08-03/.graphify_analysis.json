@@ -1,0 +1,762 @@
+{
+  "communities": {
+    "0": [
+      "backend_app_http_controllers_api_checkoutcontroller",
+      "backend_app_http_controllers_api_checkoutcontroller_checkoutcontroller",
+      "backend_app_http_controllers_api_checkoutcontroller_checkoutcontroller_confirm",
+      "backend_app_http_controllers_api_checkoutcontroller_checkoutcontroller_construct",
+      "backend_app_http_controllers_api_checkoutcontroller_checkoutcontroller_init",
+      "backend_app_http_controllers_api_checkoutcontroller_checkoutcontroller_shippingrate",
+      "backend_app_http_controllers_api_paymentwebhookcontroller",
+      "backend_app_http_controllers_api_paymentwebhookcontroller_paymentwebhookcontroller",
+      "backend_app_http_controllers_api_paymentwebhookcontroller_paymentwebhookcontroller_construct",
+      "backend_app_http_controllers_api_paymentwebhookcontroller_paymentwebhookcontroller_handle",
+      "backend_app_http_controllers_api_paymentwebhookcontroller_paymentwebhookcontroller_verifysignature",
+      "backend_app_http_controllers_api_productcontroller",
+      "backend_app_http_controllers_api_productcontroller_productcontroller",
+      "backend_app_http_controllers_api_productcontroller_productcontroller_index",
+      "backend_app_http_controllers_api_productcontroller_productcontroller_show",
+      "backend_app_http_controllers_controller",
+      "backend_app_http_controllers_controller_controller",
+      "backend_app_jobs_releaseexpiredreservations",
+      "backend_app_jobs_releaseexpiredreservations_releaseexpiredreservations",
+      "backend_app_jobs_releaseexpiredreservations_releaseexpiredreservations_construct",
+      "backend_app_jobs_releaseexpiredreservations_releaseexpiredreservations_handle",
+      "backend_app_jobs_releaseorderreservation",
+      "backend_app_jobs_releaseorderreservation_releaseorderreservation",
+      "backend_app_jobs_releaseorderreservation_releaseorderreservation_construct",
+      "backend_app_jobs_releaseorderreservation_releaseorderreservation_handle",
+      "backend_app_models_address",
+      "backend_app_models_address_address",
+      "backend_app_models_order",
+      "backend_app_models_order_order",
+      "backend_app_models_order_order_address",
+      "backend_app_models_order_order_items",
+      "backend_app_models_order_order_paymenttransactions",
+      "backend_app_models_order_order_shippingquotes",
+      "backend_app_models_order_order_statuslogs",
+      "backend_app_models_orderitem",
+      "backend_app_models_orderitem_orderitem",
+      "backend_app_models_orderitem_orderitem_order",
+      "backend_app_models_orderitem_orderitem_variant",
+      "backend_app_models_orderstatuslog",
+      "backend_app_models_orderstatuslog_orderstatuslog",
+      "backend_app_models_orderstatuslog_orderstatuslog_order",
+      "backend_app_models_paymenttransaction",
+      "backend_app_models_paymenttransaction_paymenttransaction",
+      "backend_app_models_paymenttransaction_paymenttransaction_order",
+      "backend_app_models_processedwebhook",
+      "backend_app_models_processedwebhook_processedwebhook",
+      "backend_app_models_product",
+      "backend_app_models_product_product",
+      "backend_app_models_product_product_variants",
+      "backend_app_models_productvariant",
+      "backend_app_models_productvariant_productvariant",
+      "backend_app_models_productvariant_productvariant_product",
+      "backend_app_models_shippingquote",
+      "backend_app_models_shippingquote_shippingquote",
+      "backend_app_models_shippingquote_shippingquote_order",
+      "backend_app_services_payment_midtransservice",
+      "backend_app_services_payment_midtransservice_midtransservice",
+      "backend_app_services_payment_midtransservice_midtransservice_construct",
+      "backend_app_services_payment_midtransservice_midtransservice_createtransaction",
+      "backend_app_services_shipping_cargorateservice",
+      "backend_app_services_shipping_cargorateservice_cargorateservice",
+      "backend_app_services_shipping_cargorateservice_cargorateservice_determinezone",
+      "backend_app_services_shipping_cargorateservice_cargorateservice_getrates",
+      "backend_app_services_stock_stockreservationservice",
+      "backend_app_services_stock_stockreservationservice_stockreservationservice",
+      "backend_app_services_stock_stockreservationservice_stockreservationservice_init",
+      "backend_app_services_stock_stockreservationservice_stockreservationservice_release",
+      "backend_artisan",
+      "backend_database_seeders_productseeder",
+      "backend_database_seeders_productseeder_productseeder",
+      "backend_database_seeders_productseeder_productseeder_run",
+      "backend_routes_api",
+      "backend_routes_console",
+      "illuminate_contracts_queue_shouldqueue",
+      "illuminate_database_eloquent_model",
+      "illuminate_database_eloquent_relations_belongsto",
+      "illuminate_database_eloquent_relations_hasmany",
+      "illuminate_foundation_queue_queueable",
+      "illuminate_http_request"
+    ],
+    "1": [
+      "frontend_src_app_collections_page",
+      "frontend_src_app_collections_page_collectionspage",
+      "frontend_src_app_homeclient",
+      "frontend_src_app_homeclient_homeclient",
+      "frontend_src_app_page",
+      "frontend_src_app_page_home",
+      "frontend_src_app_products_slug_page",
+      "frontend_src_app_products_slug_page_ease",
+      "frontend_src_app_products_slug_page_productdetailpage",
+      "frontend_src_components_barutiba",
+      "frontend_src_components_barutiba_barutiba",
+      "frontend_src_components_footer",
+      "frontend_src_components_footer_footer",
+      "frontend_src_components_hero",
+      "frontend_src_components_hero_hero",
+      "frontend_src_components_imageslot",
+      "frontend_src_components_imageslot_imageslot",
+      "frontend_src_components_imageslot_imageslotprops",
+      "frontend_src_components_koleksi",
+      "frontend_src_components_koleksi_koleksi",
+      "frontend_src_components_magnetic",
+      "frontend_src_components_magnetic_magnetic",
+      "frontend_src_components_magnetic_magneticprops",
+      "frontend_src_components_navbar",
+      "frontend_src_components_navbar_links",
+      "frontend_src_components_navbar_navbar",
+      "frontend_src_components_nilai",
+      "frontend_src_components_nilai_images",
+      "frontend_src_components_nilai_nilai",
+      "frontend_src_components_nilai_points",
+      "frontend_src_components_parallax",
+      "frontend_src_components_parallax_parallax",
+      "frontend_src_components_parallax_parallaxprops",
+      "frontend_src_components_pdpoverlay",
+      "frontend_src_components_pdpoverlay_ease",
+      "frontend_src_components_pdpoverlay_pdpoverlay",
+      "frontend_src_components_productcard",
+      "frontend_src_components_productcard_productcard",
+      "frontend_src_components_reveal",
+      "frontend_src_components_reveal_ease",
+      "frontend_src_components_reveal_reveal",
+      "frontend_src_components_reveal_revealgroup",
+      "frontend_src_components_reveal_revealitem",
+      "frontend_src_components_reveal_reveallines",
+      "frontend_src_components_reveal_reveallinesprops",
+      "frontend_src_components_reveal_revealprops",
+      "frontend_src_components_scrollprogress",
+      "frontend_src_components_scrollprogress_scrollprogress",
+      "frontend_src_components_sorotan",
+      "frontend_src_components_sorotan_sorotan",
+      "frontend_src_components_toast",
+      "frontend_src_components_toast_toast",
+      "frontend_src_lib_api",
+      "frontend_src_lib_api_apiproduct",
+      "frontend_src_lib_api_apivariant",
+      "frontend_src_lib_api_category_map",
+      "frontend_src_lib_api_fetchapi",
+      "frontend_src_lib_api_fetchproductbyslug",
+      "frontend_src_lib_api_fetchproducts",
+      "frontend_src_lib_api_mapapiproduct",
+      "frontend_src_lib_cartstore",
+      "frontend_src_lib_cartstore_cartline",
+      "frontend_src_lib_cartstore_cartstate",
+      "frontend_src_lib_cartstore_usecartstore",
+      "frontend_src_lib_pdpstore",
+      "frontend_src_lib_pdpstore_pdpstate",
+      "frontend_src_lib_pdpstore_usepdpstore",
+      "frontend_src_lib_products",
+      "frontend_src_lib_products_category",
+      "frontend_src_lib_products_filters",
+      "frontend_src_lib_products_formatprice",
+      "frontend_src_lib_products_product",
+      "frontend_src_lib_products_productimage",
+      "frontend_src_lib_products_productvariant",
+      "frontend_src_lib_toaststore",
+      "frontend_src_lib_toaststore_toaststate",
+      "frontend_src_lib_toaststore_usetoaststore"
+    ],
+    "2": [
+      "backend_composer",
+      "backend_composer_allow_plugins_pestphp_pest_plugin",
+      "backend_composer_allow_plugins_php_http_discovery",
+      "backend_composer_autoload",
+      "backend_composer_autoload_dev",
+      "backend_composer_autoload_dev_psr_4",
+      "backend_composer_autoload_psr_4",
+      "backend_composer_config",
+      "backend_composer_config_allow_plugins",
+      "backend_composer_config_optimize_autoloader",
+      "backend_composer_config_preferred_install",
+      "backend_composer_config_sort_packages",
+      "backend_composer_description",
+      "backend_composer_extra",
+      "backend_composer_extra_laravel",
+      "backend_composer_keywords",
+      "backend_composer_laravel_dont_discover",
+      "backend_composer_license",
+      "backend_composer_minimum_stability",
+      "backend_composer_name",
+      "backend_composer_prefer_stable",
+      "backend_composer_psr_4_app",
+      "backend_composer_psr_4_database_factories",
+      "backend_composer_psr_4_database_seeders",
+      "backend_composer_psr_4_tests",
+      "backend_composer_require",
+      "backend_composer_require_dev",
+      "backend_composer_require_dev_fakerphp_faker",
+      "backend_composer_require_dev_laravel_pail",
+      "backend_composer_require_dev_laravel_pao",
+      "backend_composer_require_dev_laravel_pint",
+      "backend_composer_require_dev_mockery_mockery",
+      "backend_composer_require_dev_nunomaduro_collision",
+      "backend_composer_require_dev_phpunit_phpunit",
+      "backend_composer_require_laravel_framework",
+      "backend_composer_require_laravel_tinker",
+      "backend_composer_require_midtrans_midtrans_php",
+      "backend_composer_require_php",
+      "backend_composer_schema",
+      "backend_composer_type",
+      "ref_framework",
+      "ref_laravel"
+    ],
+    "3": [
+      "backend_composer_scripts",
+      "backend_composer_scripts_dev",
+      "backend_composer_scripts_post_autoload_dump",
+      "backend_composer_scripts_post_create_project_cmd",
+      "backend_composer_scripts_post_root_package_install",
+      "backend_composer_scripts_post_update_cmd",
+      "backend_composer_scripts_pre_package_uninstall",
+      "backend_composer_scripts_setup",
+      "backend_composer_scripts_test",
+      "ref_composer_config_disableprocesstimeout",
+      "ref_composer_install",
+      "ref_illuminate_foundation_composerscripts_postautoloaddump",
+      "ref_illuminate_foundation_composerscripts_prepackageuninstall",
+      "ref_npm_install_ignore_scripts",
+      "ref_npm_run_build",
+      "ref_npx_concurrently_c_93c5fd_c4b5fd_fb7185_fdba74_php_artisan_serve_php_artisan_queue_listen_tries_1_timeout_0_php_artisan_pail_timeout_0_npm_run_dev_names_server_queue_logs_vite_kill_others",
+      "ref_php_artisan_config_clear_ansi_no_additional_args",
+      "ref_php_artisan_key_generate",
+      "ref_php_artisan_key_generate_ansi",
+      "ref_php_artisan_migrate_force",
+      "ref_php_artisan_migrate_graceful_ansi",
+      "ref_php_artisan_package_discover_ansi",
+      "ref_php_artisan_test",
+      "ref_php_artisan_vendor_publish_tag_laravel_assets_ansi_force",
+      "ref_php_r_file_exists_database_database_sqlite_touch_database_database_sqlite",
+      "ref_php_r_file_exists_env_copy_env_example_env"
+    ],
+    "4": [
+      "frontend_tsconfig",
+      "frontend_tsconfig_compileroptions",
+      "frontend_tsconfig_compileroptions_allowjs",
+      "frontend_tsconfig_compileroptions_esmoduleinterop",
+      "frontend_tsconfig_compileroptions_incremental",
+      "frontend_tsconfig_compileroptions_isolatedmodules",
+      "frontend_tsconfig_compileroptions_jsx",
+      "frontend_tsconfig_compileroptions_lib",
+      "frontend_tsconfig_compileroptions_module",
+      "frontend_tsconfig_compileroptions_moduleresolution",
+      "frontend_tsconfig_compileroptions_noemit",
+      "frontend_tsconfig_compileroptions_paths",
+      "frontend_tsconfig_compileroptions_plugins",
+      "frontend_tsconfig_compileroptions_resolvejsonmodule",
+      "frontend_tsconfig_compileroptions_skiplibcheck",
+      "frontend_tsconfig_compileroptions_strict",
+      "frontend_tsconfig_exclude",
+      "frontend_tsconfig_include",
+      "ref_dom",
+      "ref_dom_iterable",
+      "ref_esnext",
+      "ref_next_env_d_ts",
+      "ref_next_types_ts",
+      "ref_node_modules",
+      "ref_ts",
+      "ref_tsx"
+    ],
+    "5": [
+      "eslint",
+      "eslint_config_next",
+      "frontend_package",
+      "frontend_package_devdependencies",
+      "frontend_package_devdependencies_eslint",
+      "frontend_package_devdependencies_eslint_config_next",
+      "frontend_package_devdependencies_postcss",
+      "frontend_package_devdependencies_types_node",
+      "frontend_package_devdependencies_types_react",
+      "frontend_package_devdependencies_types_react_dom",
+      "frontend_package_devdependencies_typescript",
+      "frontend_package_name",
+      "frontend_package_private",
+      "frontend_package_scripts",
+      "frontend_package_scripts_build",
+      "frontend_package_scripts_dev",
+      "frontend_package_scripts_lint",
+      "frontend_package_scripts_start",
+      "frontend_package_version",
+      "postcss",
+      "types_node",
+      "types_react",
+      "types_react_dom",
+      "typescript"
+    ],
+    "6": [
+      "frontend_scripts_gen_images",
+      "frontend_scripts_gen_images_bench",
+      "frontend_scripts_gen_images_bg",
+      "frontend_scripts_gen_images_cabinet",
+      "frontend_scripts_gen_images_chairdining",
+      "frontend_scripts_gen_images_chairlounge",
+      "frontend_scripts_gen_images_fs",
+      "frontend_scripts_gen_images_materialgrain",
+      "frontend_scripts_gen_images_out",
+      "frontend_scripts_gen_images_path",
+      "frontend_scripts_gen_images_products",
+      "frontend_scripts_gen_images_shadow",
+      "frontend_scripts_gen_images_shelf",
+      "frontend_scripts_gen_images_svg",
+      "frontend_scripts_gen_images_tablecoffee",
+      "frontend_scripts_gen_images_tabledining",
+      "frontend_scripts_gen_images_tableside",
+      "frontend_scripts_gen_images_trust",
+      "frontend_scripts_gen_images_variants",
+      "frontend_scripts_gen_images_woods"
+    ],
+    "7": [
+      "backend_package",
+      "backend_package_devdependencies",
+      "backend_package_devdependencies_concurrently",
+      "backend_package_devdependencies_laravel_vite_plugin",
+      "backend_package_devdependencies_tailwindcss",
+      "backend_package_devdependencies_tailwindcss_vite",
+      "backend_package_devdependencies_vite",
+      "backend_package_json_tailwindcss",
+      "backend_package_private",
+      "backend_package_schema",
+      "backend_package_scripts",
+      "backend_package_scripts_build",
+      "backend_package_scripts_dev",
+      "backend_package_type",
+      "concurrently",
+      "frontend_package_devdependencies_tailwindcss",
+      "laravel_vite_plugin",
+      "tailwindcss_vite",
+      "vite"
+    ],
+    "8": [
+      "frontend_package_dependencies",
+      "frontend_package_dependencies_google_model_viewer",
+      "frontend_package_dependencies_hookform_resolvers",
+      "frontend_package_dependencies_motion",
+      "frontend_package_dependencies_next",
+      "frontend_package_dependencies_react",
+      "frontend_package_dependencies_react_dom",
+      "frontend_package_dependencies_react_hook_form",
+      "frontend_package_dependencies_zod",
+      "frontend_package_dependencies_zustand",
+      "frontend_package_json_motion",
+      "google_model_viewer",
+      "hookform_resolvers",
+      "next",
+      "react",
+      "react_dom",
+      "react_hook_form",
+      "zod",
+      "zustand"
+    ],
+    "9": [
+      "backend_app_models_user",
+      "backend_app_models_user_user",
+      "backend_app_models_user_user_casts",
+      "backend_config_auth",
+      "backend_database_factories_userfactory",
+      "backend_database_factories_userfactory_userfactory",
+      "backend_database_factories_userfactory_userfactory_definition",
+      "backend_database_factories_userfactory_userfactory_unverified",
+      "backend_database_seeders_databaseseeder",
+      "backend_database_seeders_databaseseeder_databaseseeder",
+      "backend_database_seeders_databaseseeder_databaseseeder_run",
+      "illuminate_database_console_seeds_withoutmodelevents",
+      "illuminate_database_eloquent_factories_factory",
+      "illuminate_database_eloquent_factories_hasfactory",
+      "illuminate_database_seeder",
+      "illuminate_foundation_auth_user",
+      "illuminate_notifications_notifiable",
+      "static"
+    ],
+    "10": [
+      "frontend_src_app_checkout_page",
+      "frontend_src_app_checkout_page_checkoutpage",
+      "frontend_src_app_checkout_page_section",
+      "frontend_src_lib_checkout",
+      "frontend_src_lib_checkout_confirmcheckout",
+      "frontend_src_lib_checkout_confirmcontact",
+      "frontend_src_lib_checkout_confirmresponse",
+      "frontend_src_lib_checkout_confirmshipping",
+      "frontend_src_lib_checkout_getshippingrate",
+      "frontend_src_lib_checkout_initcheckout",
+      "frontend_src_lib_checkout_inititem",
+      "frontend_src_lib_checkout_initresponse",
+      "frontend_src_lib_checkout_initresponseitem",
+      "frontend_src_lib_checkout_postapi",
+      "frontend_src_lib_checkout_shippingaddress",
+      "frontend_src_lib_checkout_shippingoption",
+      "frontend_src_lib_checkout_shippingrateresponse"
+    ],
+    "11": [
+      "backend_app_providers_appserviceprovider",
+      "backend_app_providers_appserviceprovider_appserviceprovider",
+      "backend_app_providers_appserviceprovider_appserviceprovider_boot",
+      "backend_app_providers_appserviceprovider_appserviceprovider_register",
+      "backend_bootstrap_providers",
+      "illuminate_support_serviceprovider"
+    ],
+    "12": [
+      "backend_tests_feature_exampletest",
+      "backend_tests_feature_exampletest_exampletest",
+      "backend_tests_feature_exampletest_exampletest_test_the_application_returns_a_successful_response",
+      "backend_tests_testcase",
+      "backend_tests_testcase_testcase",
+      "illuminate_foundation_testing_testcase"
+    ],
+    "13": [
+      "frontend_src_app_layout",
+      "frontend_src_app_layout_bodyfont",
+      "frontend_src_app_layout_displayfont",
+      "frontend_src_app_layout_metadata",
+      "frontend_src_app_layout_rootlayout"
+    ],
+    "14": [
+      "backend_tests_unit_exampletest",
+      "backend_tests_unit_exampletest_exampletest",
+      "backend_tests_unit_exampletest_exampletest_test_that_true_is_true",
+      "phpunit_framework_testcase"
+    ],
+    "15": [
+      "frontend_eslintrc",
+      "frontend_eslintrc_extends",
+      "ref_next_core_web_vitals",
+      "ref_next_typescript"
+    ],
+    "16": [
+      "package",
+      "package_dependencies",
+      "package_dependencies_motion",
+      "package_json_motion"
+    ],
+    "17": [
+      "backend_database_migrations_0001_01_01_000000_create_users_table",
+      "backend_database_migrations_0001_01_01_000000_create_users_table_down",
+      "backend_database_migrations_0001_01_01_000000_create_users_table_up"
+    ],
+    "18": [
+      "backend_database_migrations_0001_01_01_000001_create_cache_table",
+      "backend_database_migrations_0001_01_01_000001_create_cache_table_down",
+      "backend_database_migrations_0001_01_01_000001_create_cache_table_up"
+    ],
+    "19": [
+      "backend_database_migrations_0001_01_01_000002_create_jobs_table",
+      "backend_database_migrations_0001_01_01_000002_create_jobs_table_down",
+      "backend_database_migrations_0001_01_01_000002_create_jobs_table_up"
+    ],
+    "20": [
+      "backend_database_migrations_2026_07_17_140439_create_products_table",
+      "backend_database_migrations_2026_07_17_140439_create_products_table_down",
+      "backend_database_migrations_2026_07_17_140439_create_products_table_up"
+    ],
+    "21": [
+      "backend_database_migrations_2026_07_17_142938_create_product_variants_table",
+      "backend_database_migrations_2026_07_17_142938_create_product_variants_table_down",
+      "backend_database_migrations_2026_07_17_142938_create_product_variants_table_up"
+    ],
+    "22": [
+      "backend_database_migrations_2026_07_18_071258_create_addresses_table",
+      "backend_database_migrations_2026_07_18_071258_create_addresses_table_down",
+      "backend_database_migrations_2026_07_18_071258_create_addresses_table_up"
+    ],
+    "23": [
+      "backend_database_migrations_2026_07_18_073300_create_orders_table",
+      "backend_database_migrations_2026_07_18_073300_create_orders_table_down",
+      "backend_database_migrations_2026_07_18_073300_create_orders_table_up"
+    ],
+    "24": [
+      "backend_database_migrations_2026_07_18_075513_create_order_items_table",
+      "backend_database_migrations_2026_07_18_075513_create_order_items_table_down",
+      "backend_database_migrations_2026_07_18_075513_create_order_items_table_up"
+    ],
+    "25": [
+      "backend_database_migrations_2026_07_18_080541_create_shipping_quotes_table",
+      "backend_database_migrations_2026_07_18_080541_create_shipping_quotes_table_down",
+      "backend_database_migrations_2026_07_18_080541_create_shipping_quotes_table_up"
+    ],
+    "26": [
+      "backend_database_migrations_2026_07_18_081816_create_payment_transactions_table",
+      "backend_database_migrations_2026_07_18_081816_create_payment_transactions_table_down",
+      "backend_database_migrations_2026_07_18_081816_create_payment_transactions_table_up"
+    ],
+    "27": [
+      "backend_database_migrations_2026_07_18_082915_create_processed_webhooks_table",
+      "backend_database_migrations_2026_07_18_082915_create_processed_webhooks_table_down",
+      "backend_database_migrations_2026_07_18_082915_create_processed_webhooks_table_up"
+    ],
+    "28": [
+      "backend_database_migrations_2026_07_19_022748_create_order_status_logs_table",
+      "backend_database_migrations_2026_07_19_022748_create_order_status_logs_table_down",
+      "backend_database_migrations_2026_07_19_022748_create_order_status_logs_table_up"
+    ],
+    "29": [
+      "frontend_src_components_marquee",
+      "frontend_src_components_marquee_items",
+      "frontend_src_components_marquee_marquee"
+    ],
+    "30": [
+      "opencode_plugins_graphify",
+      "opencode_plugins_graphify_graphifyplugin",
+      "opencode_plugins_graphify_rationale_4"
+    ],
+    "31": [
+      "frontend_next_config",
+      "frontend_next_config_nextconfig"
+    ],
+    "32": [
+      "frontend_postcss_config",
+      "frontend_postcss_config_config"
+    ],
+    "33": [
+      "frontend_tailwind_config",
+      "frontend_tailwind_config_config"
+    ],
+    "34": [
+      "backend_bootstrap_app"
+    ],
+    "35": [
+      "backend_config_app"
+    ],
+    "36": [
+      "backend_config_cache"
+    ],
+    "37": [
+      "backend_config_database"
+    ],
+    "38": [
+      "backend_config_filesystems"
+    ],
+    "39": [
+      "backend_config_logging"
+    ],
+    "40": [
+      "backend_config_mail"
+    ],
+    "41": [
+      "backend_config_midtrans"
+    ],
+    "42": [
+      "backend_config_queue"
+    ],
+    "43": [
+      "backend_config_services"
+    ],
+    "44": [
+      "backend_config_session"
+    ],
+    "45": [
+      "backend_public_index"
+    ],
+    "46": [
+      "backend_resources_js_app"
+    ],
+    "47": [
+      "backend_resources_views_welcome_blade"
+    ],
+    "48": [
+      "backend_routes_web"
+    ],
+    "49": [
+      "backend_vite_config"
+    ]
+  },
+  "cohesion": {
+    "0": 0.05647517039922103,
+    "1": 0.08407382091592618,
+    "2": 0.047619047619047616,
+    "3": 0.08,
+    "4": 0.07692307692307693,
+    "5": 0.08333333333333333,
+    "6": 0.14210526315789473,
+    "7": 0.10526315789473684,
+    "8": 0.10526315789473684,
+    "9": 0.1568627450980392,
+    "10": 0.19852941176470587,
+    "11": 0.4,
+    "12": 0.4,
+    "13": 0.4,
+    "14": 0.6666666666666666,
+    "15": 0.5,
+    "16": 0.5,
+    "17": 0.6666666666666666,
+    "18": 0.6666666666666666,
+    "19": 0.6666666666666666,
+    "20": 0.6666666666666666,
+    "21": 0.6666666666666666,
+    "22": 0.6666666666666666,
+    "23": 0.6666666666666666,
+    "24": 0.6666666666666666,
+    "25": 0.6666666666666666,
+    "26": 0.6666666666666666,
+    "27": 0.6666666666666666,
+    "28": 0.6666666666666666,
+    "29": 0.6666666666666666,
+    "30": 0.6666666666666666,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0,
+    "34": 1.0,
+    "35": 1.0,
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0,
+    "39": 1.0,
+    "40": 1.0,
+    "41": 1.0,
+    "42": 1.0,
+    "43": 1.0,
+    "44": 1.0,
+    "45": 1.0,
+    "46": 1.0,
+    "47": 1.0,
+    "48": 1.0,
+    "49": 1.0
+  },
+  "gods": [
+    {
+      "id": "backend_app_models_order_order",
+      "label": "Order",
+      "degree": 17
+    },
+    {
+      "id": "frontend_src_lib_products_formatprice",
+      "label": "formatPrice()",
+      "degree": 15
+    },
+    {
+      "id": "frontend_src_lib_toaststore_usetoaststore",
+      "label": "useToastStore",
+      "degree": 15
+    },
+    {
+      "id": "frontend_tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 15
+    },
+    {
+      "id": "frontend_src_lib_cartstore_usecartstore",
+      "label": "useCartStore",
+      "degree": 13
+    },
+    {
+      "id": "frontend_src_lib_products_product",
+      "label": "Product",
+      "degree": 11
+    },
+    {
+      "id": "backend_app_http_controllers_api_checkoutcontroller_checkoutcontroller",
+      "label": "CheckoutController",
+      "degree": 9
+    },
+    {
+      "id": "backend_app_services_stock_stockreservationservice_stockreservationservice",
+      "label": "StockReservationService",
+      "degree": 9
+    },
+    {
+      "id": "backend_composer_scripts",
+      "label": "scripts",
+      "degree": 9
+    },
+    {
+      "id": "frontend_scripts_gen_images_shadow",
+      "label": "shadow()",
+      "degree": 9
+    }
+  ],
+  "surprises": [
+    {
+      "source": "CheckoutPage()",
+      "target": "formatPrice()",
+      "source_files": [
+        "frontend/src/app/checkout/page.tsx",
+        "frontend/src/lib/products.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "CollectionsPage()",
+      "target": "mapApiProduct()",
+      "source_files": [
+        "frontend/src/app/collections/page.tsx",
+        "frontend/src/lib/api.ts"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "why": "inferred connection - not explicitly stated in source"
+    },
+    {
+      "source": "Home()",
+      "target": "mapApiProduct()",
+      "source_files": [
+        "frontend/src/app/page.tsx",
+        "frontend/src/lib/api.ts"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "why": "inferred connection - not explicitly stated in source"
+    },
+    {
+      "source": "CheckoutController",
+      "target": "Controller",
+      "source_files": [
+        "backend/app/Http/Controllers/Api/CheckoutController.php",
+        "backend/app/Http/Controllers/Controller.php"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "inherits",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "CheckoutController",
+      "target": "MidtransService",
+      "source_files": [
+        "backend/app/Http/Controllers/Api/CheckoutController.php",
+        "backend/app/Services/Payment/MidtransService.php"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "cross-file semantic connection"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `scripts` connect `scripts` to `composer.json`?",
+      "why": "High betweenness centrality (0.012) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `devDependencies` connect `devDependencies` to `devDependencies`?",
+      "why": "High betweenness centrality (0.012) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `dependencies` connect `dependencies` to `devDependencies`?",
+      "why": "High betweenness centrality (0.009) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 5 inferred relationships involving `Order` (e.g. with `.confirm()` and `.shippingRate()`) actually correct?",
+      "why": "`Order` has 5 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `$schema`, `name`, `type` to the rest of the system?",
+      "why": "141 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Illuminate\\Database\\Eloquent\\Model` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.05647517039922103 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `HomeClient.tsx` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.08407382091592618 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

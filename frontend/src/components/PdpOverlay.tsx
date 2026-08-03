@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useDragControls, type PanInfo } from "motion/react";
 import ImageSlot from "./ImageSlot";
 import { formatPrice } from "@/lib/products";
@@ -16,6 +17,7 @@ export default function PdpOverlay({ products }: { products: Product[] }) {
   const close = usePdpStore((s) => s.close);
   const addItem = useCartStore((s) => s.addItem);
   const showToast = useToastStore((s) => s.show);
+  const router = useRouter();
   const [mat, setMat] = useState(0);
   const dragControls = useDragControls();
 
@@ -186,7 +188,9 @@ export default function PdpOverlay({ products }: { products: Product[] }) {
 
                 <div className="mt-8 flex flex-wrap gap-3">
                   <motion.button
-                    onClick={() => showToast("Membuka checkout instan…")}
+                    onClick={() =>
+                      router.push(`/checkout?vid=${product.variants[mat]?.id}&qty=1`)
+                    }
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     transition={{ type: "spring", stiffness: 400, damping: 20 }}

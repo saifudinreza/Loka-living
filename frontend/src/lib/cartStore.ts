@@ -2,12 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface CartLine {
-  variantId: string;
   productId: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-  material: string;
   qty: number;
 }
 
