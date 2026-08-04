@@ -63,10 +63,10 @@ export default function Footer() {
           <h3 className="disp mb-2" style={{ fontSize: "clamp(26px,3.2vw,40px)", letterSpacing: "-0.02em" }}>
             Temukan Jalan Anda
           </h3>
-          <a href="#top" className="text-sm tracking-[0.02em]">Tentang Kami</a>
+          <a href="/about" className="text-sm tracking-[0.02em]">Tentang Kami</a>
           <a href="/collections" className="text-sm tracking-[0.02em]">Katalog</a>
           <a href="#sorotan" className="text-sm tracking-[0.02em]">Penawaran Spesial</a>
-          <a href="#footer" className="text-sm tracking-[0.02em]">Kontak</a>
+          <a href="/contact" className="text-sm tracking-[0.02em]">Kontak</a>
         </div>
       </div>
 

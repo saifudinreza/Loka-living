@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import Navbar from "@/components/Navbar";
@@ -28,6 +28,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutInner />
+    </Suspense>
+  );
+}
+
+function CheckoutInner() {
   const router = useRouter();
   const sp = useSearchParams();
   const variantId = sp.get("vid");
@@ -51,12 +59,11 @@ export default function CheckoutPage() {
   // ── Shipping ──
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
   const [selectedCourier, setSelectedCourier] = useState("");
-  const [deliveryDates, setDeliveryDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState("");
 
-  // ── Payment ──
-  const [paymentMethod, setPaymentMethod] = useState("qris");
-  const [wantsInstallation, setWantsInstallation] = useState(false);
+  // ── Payment (belum ada UI pemilihan; sementara hardcoded) ──
+  const paymentMethod = "qris";
+  const wantsInstallation = false;
 
   // ── UI ──
   const [loading, setLoading] = useState(true);
@@ -111,11 +118,10 @@ export default function CheckoutPage() {
       };
       const res = await getShippingRate(order.order_token, address);
       setShippingOptions(res.options);
-      setDeliveryDates(res.available_delivery_dates);
       if (res.options.length > 0) setSelectedCourier(res.options[0].courier);
       if (res.available_delivery_dates.length > 0) setSelectedDate(res.available_delivery_dates[0]);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
       setShippingLoading(false);
     }
@@ -143,8 +149,8 @@ export default function CheckoutPage() {
       if (res.payment.redirect_url) {
         window.location.href = res.payment.redirect_url;
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
       setSubmitting(false);
     }
   }, [order, selectedCourier, selectedDate, email, phone, wantsInstallation, paymentMethod]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import Navbar from "@/components/Navbar";
@@ -13,7 +13,7 @@ import { FILTERS } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import { fetchProducts, mapApiProduct } from "@/lib/api";
 
-export default function CollectionsPage() {
+function CollectionsInner() {
   const sp = useSearchParams();
   const active = sp.get("cat") ?? "Semua";
   const [products, setProducts] = useState<Product[]>([]);
@@ -103,5 +103,13 @@ export default function CollectionsPage() {
       <Footer />
       <Toast />
     </div>
+  );
+}
+
+export default function CollectionsPage() {
+  return (
+    <Suspense fallback={null}>
+      <CollectionsInner />
+    </Suspense>
   );
 }

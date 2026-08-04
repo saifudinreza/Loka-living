@@ -1,8 +1,8 @@
 {
   ".opencode/opencode.json": {
-    "mtime": 1785761419.428895,
-    "ast_hash": "f2ae21510d07365eb2bce8159272c7a0",
-    "semantic_hash": "f2ae21510d07365eb2bce8159272c7a0"
+    "mtime": 1785761644.393879,
+    "ast_hash": "1efe24ecf938911d4f23e4b1c6ec91f7",
+    "semantic_hash": ""
   },
   ".opencode/plugins/graphify.js": {
     "mtime": 1785761437.897889,
@@ -370,9 +370,9 @@
     "semantic_hash": "653fc2d3d98b9e8b9a4dfe3e1756d750"
   },
   "frontend/src/app/products/[slug]/page.tsx": {
-    "mtime": 1785162091.6545424,
-    "ast_hash": "cb3936313ec6e1d4abb6169fa2572b74",
-    "semantic_hash": "cb3936313ec6e1d4abb6169fa2572b74"
+    "mtime": 1785762149.9269817,
+    "ast_hash": "8eadef0f61fd52c623aba399d1b548ec",
+    "semantic_hash": ""
   },
   "frontend/src/components/BaruTiba.tsx": {
     "mtime": 1785162010.4319148,
@@ -425,9 +425,9 @@
     "semantic_hash": "0e5bc28f0158eed178ad9ebb1e830c8e"
   },
   "frontend/src/components/PdpOverlay.tsx": {
-    "mtime": 1785162038.202737,
-    "ast_hash": "c83e822131edc71e30e5aeb67c8487f4",
-    "semantic_hash": "c83e822131edc71e30e5aeb67c8487f4"
+    "mtime": 1785762174.0283306,
+    "ast_hash": "0a8d018d8f1bdf076a94ae154b6a4e0d",
+    "semantic_hash": ""
   },
   "frontend/src/components/ProductCard.tsx": {
     "mtime": 1785162001.9401624,
@@ -445,9 +445,9 @@
     "semantic_hash": "2906c1349a4d13925e6ee12d51c6cc93"
   },
   "frontend/src/components/Sorotan.tsx": {
-    "mtime": 1785161967.1586876,
-    "ast_hash": "77dff8e04a930adaa985f934fe3408a9",
-    "semantic_hash": "77dff8e04a930adaa985f934fe3408a9"
+    "mtime": 1785762189.7577112,
+    "ast_hash": "fcb555a79eaf476e4b13bfae7fc9b0f9",
+    "semantic_hash": ""
   },
   "frontend/src/components/Toast.tsx": {
     "mtime": 1784131857.7623105,
@@ -460,9 +460,9 @@
     "semantic_hash": "8587bf8b38d80e2ea96f44dfe87bc919"
   },
   "frontend/src/lib/cartStore.ts": {
-    "mtime": 1785333620.5281458,
-    "ast_hash": "735183d41172eabb8bdd7bf55f331bd0",
-    "semantic_hash": "735183d41172eabb8bdd7bf55f331bd0"
+    "mtime": 1785762228.407633,
+    "ast_hash": "abb03e760cb90f857d598229bb4f8a3a",
+    "semantic_hash": ""
   },
   "frontend/src/lib/checkout.ts": {
     "mtime": 1785173752.7622867,
@@ -498,5 +498,145 @@
     "mtime": 1784131406.6390684,
     "ast_hash": "f40c472085a5f2d2389ab80d0fd873d6",
     "semantic_hash": "f40c472085a5f2d2389ab80d0fd873d6"
+  },
+  "AGENTS.md": {
+    "mtime": 1785761437.8963814,
+    "ast_hash": "21ceb6533048be51308e69e7b74a35cf",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1785162319.325982,
+    "ast_hash": "9837da0606136ff4c4d342b67bb0ae90",
+    "semantic_hash": ""
+  },
+  "PLANNING-LokaLiving.md": {
+    "mtime": 1784205341.9930327,
+    "ast_hash": "b9743c2710271d58f9a58b887993985a",
+    "semantic_hash": ""
+  },
+  "PRD-LokaLiving.md": {
+    "mtime": 1784044596.314236,
+    "ast_hash": "cc7c935c62bd7e22a620c58a692bdd76",
+    "semantic_hash": ""
+  },
+  "TECHNICAL-LokaLiving.md": {
+    "mtime": 1784205323.4237514,
+    "ast_hash": "dea229bee65c563ac79cf99e5bc4553e",
+    "semantic_hash": ""
+  },
+  "backend/README.md": {
+    "mtime": 1784292047.28681,
+    "ast_hash": "d2661a31fed7f254f5b7d3b6fe19330a",
+    "semantic_hash": ""
+  },
+  "backend/public/robots.txt": {
+    "mtime": 1784292047.219192,
+    "ast_hash": "b6216d61c03e6ce0c9aea6ca7808f7ca",
+    "semantic_hash": ""
+  },
+  "design.md": {
+    "mtime": 1784044611.6650417,
+    "ast_hash": "a7d6729a2474f08281cbe0887b8c63ac",
+    "semantic_hash": ""
+  },
+  "frontend/README.md": {
+    "mtime": 1779729146.446138,
+    "ast_hash": "f15aaa42d5d299d091b1171097ea56ad",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-footer-desk.svg": {
+    "mtime": 1784129488.19772,
+    "ast_hash": "8e09a5f44d9d426ce74e5e6f0a7676c5",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-hero.svg": {
+    "mtime": 1784129488.1769507,
+    "ast_hash": "3a93099d2d68c34f90b3f24a14d460b9",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-p1.svg": {
+    "mtime": 1784129488.092714,
+    "ast_hash": "06ca7e6c7dd7946bf6c270d741863baa",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-p2.svg": {
+    "mtime": 1784129488.123413,
+    "ast_hash": "4744c36687ab8da96c63642c92137dbd",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-p3.svg": {
+    "mtime": 1784129488.1301682,
+    "ast_hash": "e2839aa4b741ee586fc512be61a6dd34",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-p4.svg": {
+    "mtime": 1784129488.1377537,
+    "ast_hash": "8c4774885d371cd6f2507e6c7196dccd",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-p5.svg": {
+    "mtime": 1784129488.1422927,
+    "ast_hash": "407cbe79f8fe4eb51e7840ee27d42ebd",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-p6.svg": {
+    "mtime": 1784129488.1475265,
+    "ast_hash": "b81ff39f0369b856bf85c0350dff09d3",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-p7.svg": {
+    "mtime": 1784129488.152068,
+    "ast_hash": "76c00f21201e79ebe88a18179f1e66e4",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-p8.svg": {
+    "mtime": 1784129488.1567507,
+    "ast_hash": "3cc6809229d16221b7a9b6a629dc49e8",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-pdp.svg": {
+    "mtime": 1784129488.1749413,
+    "ast_hash": "28e67c4a289d77cabf77d6a80681024b",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-spot-jati.svg": {
+    "mtime": 1784129488.162263,
+    "ast_hash": "e11f2f246d4a6b5d07c877aa2ec6cbbe",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-spot-linen.svg": {
+    "mtime": 1784129488.1708803,
+    "ast_hash": "46138cf9481fbb4e1aad0697e4a658cc",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-spot-rotan.svg": {
+    "mtime": 1784129488.1597607,
+    "ast_hash": "5311de8223f835bf083cd75b6ac84c37",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-spot-walnut.svg": {
+    "mtime": 1784129488.1663294,
+    "ast_hash": "a28a4a1bde318015c638a8f695782344",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-trust1.svg": {
+    "mtime": 1784129488.182487,
+    "ast_hash": "f687e5e66ead80352d2ccbb0e5472559",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-trust2.svg": {
+    "mtime": 1784129488.186985,
+    "ast_hash": "c551422d6f18f55918cc6ee123a4bfbf",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-trust3.svg": {
+    "mtime": 1784129488.191508,
+    "ast_hash": "9cbcb57e5f4afd904aa2c690b70621b4",
+    "semantic_hash": ""
+  },
+  "frontend/public/images/lk-trust4.svg": {
+    "mtime": 1784129488.1936712,
+    "ast_hash": "942c139bfd4738524e2ce3ec7aa641df",
+    "semantic_hash": ""
   }
 }

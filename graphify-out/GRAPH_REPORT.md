@@ -1,16 +1,16 @@
 # Graph Report - Loka-Living  (2026-08-03)
 
 ## Corpus Check
-- 108 files · ~34,561 words
+- 110 files · ~35,581 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 586 nodes · 838 edges · 60 communities (53 shown, 7 thin omitted)
+- 596 nodes · 872 edges · 60 communities (53 shown, 7 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 26 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3600d7f9`
+- Built from commit: `95ec9210`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -50,26 +50,26 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `Order` - 17 edges
-2. `formatPrice()` - 15 edges
-3. `useToastStore` - 15 edges
+2. `useToastStore` - 17 edges
+3. `formatPrice()` - 15 edges
 4. `compilerOptions` - 15 edges
 5. `useCartStore` - 13 edges
 6. `PRD — Loka Living E-Commerce Platform` - 12 edges
-7. `Product` - 11 edges
-8. `CheckoutController` - 9 edges
-9. `StockReservationService` - 9 edges
-10. `scripts` - 9 edges
+7. `Reveal()` - 11 edges
+8. `Product` - 11 edges
+9. `ImageSlot()` - 10 edges
+10. `CheckoutController` - 9 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `CheckoutPage()` --calls--> `formatPrice()`  [EXTRACTED]
+- `CheckoutInner()` --calls--> `formatPrice()`  [EXTRACTED]
   frontend/src/app/checkout/page.tsx → frontend/src/lib/products.ts
-- `CollectionsPage()` --indirect_call--> `mapApiProduct()`  [INFERRED]
+- `CollectionsInner()` --indirect_call--> `mapApiProduct()`  [INFERRED]
   frontend/src/app/collections/page.tsx → frontend/src/lib/api.ts
+- `ContactPage()` --calls--> `useToastStore`  [EXTRACTED]
+  frontend/src/app/contact/page.tsx → frontend/src/lib/toastStore.ts
 - `Home()` --indirect_call--> `mapApiProduct()`  [INFERRED]
   frontend/src/app/page.tsx → frontend/src/lib/api.ts
 - `ProductDetailPage()` --calls--> `fetchProductBySlug()`  [EXTRACTED]
-  frontend/src/app/products/[slug]/page.tsx → frontend/src/lib/api.ts
-- `ProductDetailPage()` --calls--> `mapApiProduct()`  [EXTRACTED]
   frontend/src/app/products/[slug]/page.tsx → frontend/src/lib/api.ts
 
 ## Import Cycles
@@ -79,11 +79,11 @@
 
 ### Community 0 - "Illuminate\Database\Eloquent\Model"
 Cohesion: 0.07
-Nodes (20): CheckoutController, PaymentWebhookController, ProductController, Controller, Address, Order, OrderItem, OrderStatusLog (+12 more)
+Nodes (21): CheckoutController, PaymentWebhookController, ProductController, Controller, Address, Order, OrderItem, OrderStatusLog (+13 more)
 
 ### Community 1 - "HomeClient.tsx"
-Cohesion: 0.10
-Nodes (43): EASE, ProductDetailPage(), BaruTiba(), Footer(), Hero(), ImageSlot(), ImageSlotProps, Koleksi() (+35 more)
+Cohesion: 0.09
+Nodes (47): STATS, VALUES, ContactPage(), CONTACTS, HOURS, ProductDetailPage(), BaruTiba(), Footer() (+39 more)
 
 ### Community 2 - "composer.json"
 Cohesion: 0.05
@@ -114,12 +114,12 @@ Cohesion: 0.11
 Nodes (19): dependencies, @google/model-viewer, @hookform/resolvers, motion, next, react, react-dom, react-hook-form (+11 more)
 
 ### Community 9 - "User.php"
-Cohesion: 0.14
-Nodes (11): User, UserFactory, DatabaseSeeder, ProductSeeder, Illuminate\Database\Console\Seeds\WithoutModelEvents, Illuminate\Database\Eloquent\Factories\Factory, Illuminate\Database\Eloquent\Factories\HasFactory, Illuminate\Database\Seeder (+3 more)
+Cohesion: 0.16
+Nodes (10): User, UserFactory, DatabaseSeeder, Illuminate\Database\Console\Seeds\WithoutModelEvents, Illuminate\Database\Eloquent\Factories\Factory, Illuminate\Database\Eloquent\Factories\HasFactory, Illuminate\Database\Seeder, Illuminate\Foundation\Auth\User (+2 more)
 
 ### Community 10 - "checkout/page.tsx"
-Cohesion: 0.20
-Nodes (14): CheckoutPage(), confirmCheckout(), ConfirmContact, ConfirmResponse, ConfirmShipping, getShippingRate(), initCheckout(), InitItem (+6 more)
+Cohesion: 0.18
+Nodes (14): CheckoutInner(), confirmCheckout(), ConfirmContact, ConfirmResponse, ConfirmShipping, getShippingRate(), initCheckout(), InitItem (+6 more)
 
 ### Community 12 - "TestCase"
 Cohesion: 0.40
@@ -151,7 +151,7 @@ Nodes (18): 1. Prinsip Desain, 2.1 Warna, 2.2 Tipografi, 2.3 Layout & Spacing, 2
 
 ### Community 52 - "api.ts"
 Cohesion: 0.26
-Nodes (11): CollectionsPage(), HomeClient(), Home(), ApiProduct, ApiVariant, CATEGORY_MAP, fetchApi(), fetchProductBySlug() (+3 more)
+Nodes (11): CollectionsInner(), HomeClient(), Home(), ApiProduct, ApiVariant, CATEGORY_MAP, fetchApi(), fetchProductBySlug() (+3 more)
 
 ### Community 53 - "Planning Document — Loka Living"
 Cohesion: 0.17
@@ -178,7 +178,7 @@ Cohesion: 0.50
 Nodes (3): plugin, $schema, .opencode/plugins/graphify.js
 
 ## Knowledge Gaps
-- **239 isolated node(s):** `$schema`, `.opencode/plugins/graphify.js`, `$schema`, `name`, `type` (+234 more)
+- **243 isolated node(s):** `$schema`, `.opencode/plugins/graphify.js`, `$schema`, `name`, `type` (+238 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -186,16 +186,16 @@ Nodes (3): plugin, $schema, .opencode/plugins/graphify.js
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `scripts` connect `scripts` to `composer.json`?**
-  _High betweenness centrality (0.008) - this node is a cross-community bridge._
+  _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Why does `Order` connect `Illuminate\Database\Eloquent\Model` to `ReleaseOrderReservation.php`?**
   _High betweenness centrality (0.004) - this node is a cross-community bridge._
 - **Are the 5 inferred relationships involving `Order` (e.g. with `.confirm()` and `.shippingRate()`) actually correct?**
   _`Order` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `$schema`, `.opencode/plugins/graphify.js`, `$schema` to the rest of the system?**
-  _239 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _243 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Illuminate\Database\Eloquent\Model` be split into smaller, more focused modules?**
-  _Cohesion score 0.068997668997669 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06672519754170325 - nodes in this community are weakly interconnected._
 - **Should `HomeClient.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.09769335142469471 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08936936936936937 - nodes in this community are weakly interconnected._
 - **Should `composer.json` be split into smaller, more focused modules?**
   _Cohesion score 0.047619047619047616 - nodes in this community are weakly interconnected._

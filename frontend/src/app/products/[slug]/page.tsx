@@ -15,8 +15,6 @@ import { fetchProductBySlug, mapApiProduct } from "@/lib/api";
 import { useCartStore } from "@/lib/cartStore";
 import { useToastStore } from "@/lib/toastStore";
 
-const EASE = [0.19, 1, 0.22, 1] as const;
-
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();

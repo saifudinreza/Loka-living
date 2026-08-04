@@ -10,3 +10,7 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+## Mode Belajar
+
+User ingin dikerjakan dengan **mode belajar**: setiap sesi, jelaskan dengan bahasa sederhana (campur Indonesia) apa yang dikerjakan, konsep di baliknya, dan alasannya — seperti ngajar junior dev. Selalu lanjutkan dari roadmap `PLANNING-LokaLiving.md`, dan mulai dengan ringkasan singkat "di mana kita sekarang" sebelum coding.

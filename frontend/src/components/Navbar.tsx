@@ -8,7 +8,8 @@ const LINKS = [
   { href: "/collections", label: "Koleksi" },
   { href: "#baru", label: "Baru Tiba" },
   { href: "#sorotan", label: "Sorotan" },
-  { href: "#nilai", label: "Brand Kami" },
+  { href: "/about", label: "Tentang" },
+  { href: "/contact", label: "Kontak" },
 ];
 
 export default function Navbar() {
