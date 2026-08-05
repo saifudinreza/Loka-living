@@ -1,7 +1,7 @@
-# Graph Report - Loka-Living  (2026-08-05)
+# Graph Report - Loka-Living  (2026-08-03)
 
 ## Corpus Check
-- 110 files · ~35,757 words
+- 110 files · ~35,581 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2694bd0f`
+- Built from commit: `95ec9210`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

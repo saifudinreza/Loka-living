@@ -176,7 +176,11 @@ class CheckoutController extends Controller
 
     // 7. Panggil Midtrans Snap
     try {
-        $payment = $this->midtransService->createTransaction($order, $validated['contact']);
+        $payment = $this->midtransService->createTransaction(
+            $order,
+            $validated['contact'],
+            $validated['payment_method'],
+        );
 
         // 8. Simpan transaksi pembayaran
         PaymentTransaction::create([

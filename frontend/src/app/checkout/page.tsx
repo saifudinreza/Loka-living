@@ -61,8 +61,8 @@ function CheckoutInner() {
   const [selectedCourier, setSelectedCourier] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
 
-  // ── Payment (belum ada UI pemilihan; sementara hardcoded) ──
-  const paymentMethod = "qris";
+  // ── Payment ──
+  const [paymentMethod, setPaymentMethod] = useState("qris");
   const wantsInstallation = false;
 
   // ── UI ──
@@ -298,6 +298,42 @@ function CheckoutInner() {
                   >
                     {shippingLoading ? "Menghitung..." : "Hitung Ongkir"}
                   </motion.button>
+                </div>
+              </Section>
+
+              {/* SECTION: metode pembayaran */}
+              <Section title="Metode Pembayaran">
+                <div className="flex flex-col gap-3">
+                  {[
+                    { id: "qris", label: "QRIS", desc: "Scan sekali, bayar dari aplikasi apa pun" },
+                    { id: "va_bca", label: "Virtual Account BCA", desc: "Transfer dari m-banking / ATM" },
+                    { id: "credit_card", label: "Kartu Kredit", desc: "Visa, Mastercard, JCB" },
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setPaymentMethod(m.id)}
+                      className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition-colors ${
+                        paymentMethod === m.id
+                          ? "border-olive bg-olive/5"
+                          : "border-line bg-bg hover:border-ink/30"
+                      }`}
+                    >
+                      <span>
+                        <span className="block text-sm font-semibold text-ink">{m.label}</span>
+                        <span className="block text-xs text-soft">{m.desc}</span>
+                      </span>
+                      <span
+                        className={`flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border ${
+                          paymentMethod === m.id ? "border-olive" : "border-line"
+                        }`}
+                      >
+                        {paymentMethod === m.id && (
+                          <span className="h-2.5 w-2.5 rounded-full bg-olive" />
+                        )}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </Section>
             </div>

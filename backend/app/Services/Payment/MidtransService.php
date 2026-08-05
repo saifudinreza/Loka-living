@@ -8,6 +8,13 @@ use Midtrans\Config;
 
 class MidtransService 
 {
+    // Mapping payment_method kita -> channel yang diaktifkan di Snap
+    private const PAYMENT_CHANNELS = [
+        'qris'        => ['qris'],
+        'va_bca'      => ['bca_va'],
+        'credit_card' => ['credit_card'],
+    ];
+
     public function __construct()
     {
         Config::$serverKey    = config('midtrans.server_key');
@@ -17,7 +24,7 @@ class MidtransService
         Config::$is3ds        = true;
     }
 
-    public function createTransaction(Order $order, array $customer): array
+    public function createTransaction(Order $order, array $customer, ?string $paymentMethod = null): array
     {
         $itemDetails = $order->items->map(fn ($item) => [
             'id'       => $item->product_variant_id,
@@ -49,6 +56,11 @@ class MidtransService
                 'phone'      => $customer['phone'],
             ],
         ];
+
+        // Batasi channel Snap sesuai pilihan user kalau ada mapping-nya
+        if ($paymentMethod && isset(self::PAYMENT_CHANNELS[$paymentMethod])) {
+            $params['enabled_payments'] = self::PAYMENT_CHANNELS[$paymentMethod];
+        }
 
         $snap = Snap::createTransaction($params);
 
