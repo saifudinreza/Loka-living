@@ -60,7 +60,7 @@ export default function BaruTiba({ products, newArrivalSlugs }: { products: Prod
             <motion.button
               onClick={(e) => {
                 e.stopPropagation();
-                addItem(item.id);
+                addItem(item.variants[0]?.id ?? "");
                 showToast("Ditambahkan ke keranjang");
               }}
               whileHover={{ scale: 1.1, rotate: 90 }}

@@ -29,7 +29,7 @@ Prinsip kunci: Next.js **tidak pernah** panggil Midtrans/Stripe/Cargo API langsu
 - `frontend/` — Next.js 14 (App Router), TypeScript, Tailwind, Zustand, react-hook-form + zod, `@google/model-viewer`, `motion` (Framer Motion)
 - `backend/` — Laravel 11 API (fresh install, dikerjakan ulang dari nol karena implementasi sebelumnya hilang)
 
-## 3. Status Sekarang (per 2026-07-27)
+## 3. Status Sekarang (per 2026-08-06)
 
 Sedang di **Fase 1 — MVP**.
 
@@ -68,6 +68,9 @@ Sedang di **Fase 1 — MVP**.
 - ✅ `components/PdpOverlay.tsx` — terima `products` prop, pake product.variants
 - ✅ `app/collections/page.tsx` — fetch dari API via `useEffect`, filter by searchParams
 - ✅ `app/products/[slug]/page.tsx` — fetch `fetchProductBySlug`, variants dari API
+- ✅ **`app/checkout/page.tsx` — checkout single-screen UI** (commit `b1f7d36`–`04b8219`, 2026-08-05): terhubung ke `lib/checkout.ts` → `POST /checkout/init`, `POST /checkout/shipping-rate`, `POST /checkout/confirm` → redirect ke Midtrans Snap; form kontak (email/WA), alamat (provinsi/kota/kodepos), hitung ongkir per kurir, pilihan metode bayar (QRIS/VA BCA/Kartu), ringkasan belanja sticky
+- ✅ `app/about/page.tsx` & `app/contact/page.tsx` (commit `2694bd0`)
+- ✅ Fix hardcode & error type (commit `04b8219` — HEAD)
 
 ## Todo (daftar kerja — update tiap selesai)
 
@@ -88,9 +91,21 @@ Urutan kerja: kerjakan berurutan, mode belajar untuk logic kritis.
 - ✅ **Step 12** — `products/[slug]/page.tsx` fetch dari API
 - ✅ **Step 13** — Verifikasi: TypeScript clean, build compiled sukses, API jalan
 
-### Batch 2: Checkout Single-Screen UI
+### Batch 2: Checkout Single-Screen UI (selesai — sesi 2026-08-05)
 
-- [ ] (detail menyusul saat sampai di sini)
+**Capaian (git log `b1f7d36` → `04b8219`):**
+- ✅ `app/checkout/page.tsx` — checkout single-screen: ringkasan pesanan, form kontak, form alamat, hitung ongkir, pilih kurir, pilih metode bayar, sticky summary, tombol Bayar Sekarang → `confirmCheckout` → redirect Midtrans
+- ✅ `lib/checkout.ts` — typed wrapper: `initCheckout`, `getShippingRate`, `confirmCheckout` (API_BASE = `NEXT_PUBLIC_API_URL || http://localhost:8000/api`)
+- ✅ `app/about/page.tsx` + `app/contact/page.tsx`
+- ✅ Perbaikan: suspense error di checkout page, error types
+
+### Batch 3: Sisa Fase 1 — QA & Penyempurnaan (belum dikerjakan)
+
+- [ ] Isi `MIDTRANS_SERVER_KEY`/`MIDTRANS_CLIENT_KEY` di `backend/.env` (masih kosong → Bayar Sekarang belum bisa diuji)
+- [ ] QA alur beli end-to-end (backend + frontend jalan, tes beli QRIS/VA sandbox)
+- [ ] Test kritis wajib: 2 tab browser beli stok terakhir bersamaan (oversell check)
+- [ ] Checkout dari cart (multiple items) — `lib/cartStore.ts` ada tapi checkout masih via `?vid=&qty=` dari PDP
+- [ ] Integrasi Google Maps Autocomplete (opsional, PLANNING §3)
 
 ## 4. Yang TIDAK BOLEH Dipangkas / Dilonggarkan
 

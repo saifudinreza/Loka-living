@@ -124,7 +124,7 @@ export default function Sorotan({ products, featuredSlug }: { products: Product[
             </Magnetic>
             <button
               onClick={() => {
-                addItem(highlight.id);
+                addItem(highlight.variants[variant]?.id ?? "");
                 showToast("Ditambahkan ke keranjang");
               }}
               className="rounded-full border border-ink px-8 py-4 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink transition-colors hover:bg-ink hover:text-bg"

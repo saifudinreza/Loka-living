@@ -2,15 +2,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface CartLine {
-  productId: string;
+  variantId: string;
   qty: number;
 }
 
 interface CartState {
   lines: CartLine[];
-  addItem: (productId: string, qty?: number) => void;
-  removeItem: (productId: string) => void;
-  setQty: (productId: string, qty: number) => void;
+  addItem: (variantId: string, qty?: number) => void;
+  removeItem: (variantId: string) => void;
+  setQty: (variantId: string, qty: number) => void;
   clear: () => void;
   count: () => number;
 }
@@ -19,31 +19,35 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       lines: [],
-      addItem: (productId, qty = 1) =>
+      addItem: (variantId, qty = 1) =>
         set((state) => {
-          const existing = state.lines.find((l) => l.productId === productId);
+          const existing = state.lines.find((l) => l.variantId === variantId);
           if (existing) {
             return {
               lines: state.lines.map((l) =>
-                l.productId === productId ? { ...l, qty: l.qty + qty } : l
+                l.variantId === variantId ? { ...l, qty: l.qty + qty } : l
               ),
             };
           }
-          return { lines: [...state.lines, { productId, qty }] };
+          return { lines: [...state.lines, { variantId, qty }] };
         }),
-      removeItem: (productId) =>
+      removeItem: (variantId) =>
         set((state) => ({
-          lines: state.lines.filter((l) => l.productId !== productId),
+          lines: state.lines.filter((l) => l.variantId !== variantId),
         })),
-      setQty: (productId, qty) =>
+      setQty: (variantId, qty) =>
         set((state) => ({
           lines: state.lines.map((l) =>
-            l.productId === productId ? { ...l, qty } : l
+            l.variantId === variantId ? { ...l, qty } : l
           ),
         })),
       clear: () => set({ lines: [] }),
       count: () => get().lines.reduce((sum, l) => sum + l.qty, 0),
     }),
-    { name: "loka-living-cart" }
+    {
+      name: "loka-living-cart",
+      version: 2,
+      migrate: () => ({ lines: [] }),
+    }
   )
 );

@@ -200,7 +200,7 @@ export default function PdpOverlay({ products }: { products: Product[] }) {
                   </motion.button>
                   <motion.button
                     onClick={() => {
-                      addItem(product.id);
+                      addItem(product.variants[mat]?.id ?? "");
                       showToast("Ditambahkan ke keranjang");
                     }}
                     whileHover={{ scale: 1.02 }}

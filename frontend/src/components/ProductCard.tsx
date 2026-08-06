@@ -56,7 +56,7 @@ export default function ProductCard({ product, href }: { product: Product; href?
           transition={{ duration: 0.3, ease: "easeOut" }}
           onClick={(e) => {
             e.stopPropagation();
-            addItem(product.id);
+            addItem(product.variants[0]?.id ?? "");
             showToast("Ditambahkan ke keranjang");
           }}
           className="absolute bottom-3.5 left-3.5 right-3.5 rounded-full bg-ink py-3 text-[13px] font-semibold text-bg"
