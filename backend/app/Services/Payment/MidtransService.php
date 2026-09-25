@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use App\Exceptions\PaymentConfigException;
 use App\Models\Order;
 use Midtrans\Snap;
 use Midtrans\Config;
@@ -26,6 +27,15 @@ class MidtransService
 
     public function createTransaction(Order $order, array $customer, ?string $paymentMethod = null): array
     {
+        // Dicek di sini (bukan constructor) supaya endpoint lain yang cuma
+        // inject controller ini (init, shipping-rate) tidak ikut gagal
+        // gara-gara Midtrans key belum diisi — cuma confirm yang butuh ini.
+        if (empty(config('midtrans.server_key')) || empty(config('midtrans.client_key'))) {
+            throw new PaymentConfigException(
+                'MIDTRANS_SERVER_KEY / MIDTRANS_CLIENT_KEY belum diset di .env.'
+            );
+        }
+
         $itemDetails = $order->items->map(fn ($item) => [
             'id'       => $item->product_variant_id,
             'price'    => (int) $item->unit_price,

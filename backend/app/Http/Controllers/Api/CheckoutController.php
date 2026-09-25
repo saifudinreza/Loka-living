@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\PaymentConfigException;
 use App\Http\Controllers\Controller;
 use App\Models\Address;
 use App\Models\Order;
@@ -12,6 +13,7 @@ use App\Services\Payment\MidtransService;
 use App\Services\Shipping\CargoRateService;
 use App\Services\Stock\StockReservationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -199,6 +201,18 @@ class CheckoutController extends Controller
                 'redirect_url' => $payment['redirect_url'],
             ],
         ]);
+    } catch (PaymentConfigException $e) {
+        // Kredensial Midtrans belum diset — jangan bocorkan detail ke user,
+        // cukup log server-side. Lihat ISSUE-03 untuk format error standar penuh.
+        Log::critical('Checkout confirm gagal: payment config missing.', [
+            'order_id' => $order->id,
+        ]);
+        return response()->json([
+            'error' => [
+                'code' => 'PAYMENT_CONFIG_MISSING',
+                'message' => 'Metode pembayaran sedang tidak tersedia. Coba lagi beberapa saat.',
+            ],
+        ], 503);
     } catch (\Exception $e) {
         return response()->json(['error' => 'Payment failed: ' . $e->getMessage()], 500);
     }

@@ -2,3 +2,7 @@
 /.claude
 /frontend/node_modules
 /backend/vendor
+
+.env
+.env.*
+!.env.example
