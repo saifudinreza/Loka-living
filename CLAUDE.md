@@ -101,6 +101,8 @@ Urutan kerja: kerjakan berurutan, mode belajar untuk logic kritis.
 
 ### Batch 3: Sisa Fase 1 — QA & Penyempurnaan (belum dikerjakan)
 
+> Rincian kerja pembayaran/riwayat transaksi/error handling sudah dipecah jadi ISSUE-01 s/d ISSUE-14 di `issues.md` (dibuat 2026-09-25), termasuk bug yang ditemukan di `confirm` & webhook.
+
 - [ ] Isi `MIDTRANS_SERVER_KEY`/`MIDTRANS_CLIENT_KEY` di `backend/.env` (masih kosong → Bayar Sekarang belum bisa diuji)
 - [ ] QA alur beli end-to-end (backend + frontend jalan, tes beli QRIS/VA sandbox)
 - [ ] Test kritis wajib: 2 tab browser beli stok terakhir bersamaan (oversell check)

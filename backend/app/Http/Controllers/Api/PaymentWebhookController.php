@@ -10,6 +10,7 @@ use App\Models\ProcessedWebhook;
 use App\Services\Stock\StockReservationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PaymentWebhookController extends Controller
@@ -178,10 +179,18 @@ class PaymentWebhookController extends Controller
 
     private function verifySignature(array $payload): bool
     {
+        $serverKey = config('midtrans.server_key');
+
+        // Server key kosong = signature bisa dipalsukan siapa pun (rumusnya publik).
+        // Jangan pernah lanjut verifikasi kalau ini kosong — tolak langsung.
+        if (empty($serverKey)) {
+            Log::critical('Webhook Midtrans ditolak: MIDTRANS_SERVER_KEY belum diset.');
+            return false;
+        }
+
         $orderId = $payload['order_id'] ?? '';
         $statusCode = $payload['status_code'] ?? '';
         $grossAmt = $payload['gross_amount'] ?? '';
-        $serverKey = config('midtrans.server_key');
 
         $computed = hash('sha512', $orderId . $statusCode . $grossAmt . $serverKey);
 
