@@ -16,21 +16,26 @@ import {
 } from "drizzle-orm/pg-core";
 import { productVariants, products } from "./catalog";
 
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  // selalu disimpan lowercase
-  email: varchar("email", { length: 150 }).notNull().unique(),
-  // null untuk akun yang hanya login Google
-  passwordHash: text("password_hash"),
-  name: varchar("name", { length: 120 }).notNull(),
-  googleId: varchar("google_id", { length: 64 }).unique(),
-  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // disimpan lowercase; dijaga CHECK di bawah supaya "A@x.com" dan "a@x.com" tidak bisa jadi dua akun
+    email: varchar("email", { length: 150 }).notNull().unique(),
+    // null untuk akun yang hanya login Google
+    passwordHash: text("password_hash"),
+    name: varchar("name", { length: 120 }).notNull(),
+    googleId: varchar("google_id", { length: 64 }).unique(),
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    // Akun tidak dihapus permanen: user yang pernah punya pesanan hanya dinonaktifkan
+    // (orders.user_id memakai ON DELETE RESTRICT). Akun dengan deleted_at terisi tidak boleh login.
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // diperbarui trigger database (lihat migrasi updated_at_triggers)
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check("users_email_lowercase", sql`${t.email} = lower(${t.email})`)],
+);
 
 export const refreshTokens = pgTable(
   "refresh_tokens",
@@ -48,7 +53,12 @@ export const refreshTokens = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     userAgent: varchar("user_agent", { length: 255 }),
   },
-  (t) => [index("refresh_tokens_user_id_idx").on(t.userId), index("refresh_tokens_family_id_idx").on(t.familyId)],
+  (t) => [
+    index("refresh_tokens_user_id_idx").on(t.userId),
+    index("refresh_tokens_family_id_idx").on(t.familyId),
+    // untuk job pembersihan token kedaluwarsa
+    index("refresh_tokens_expires_at_idx").on(t.expiresAt),
+  ],
 );
 
 export const userAddresses = pgTable(
@@ -71,10 +81,7 @@ export const userAddresses = pgTable(
     longitude: numeric("longitude", { precision: 10, scale: 7 }),
     isDefault: boolean("is_default").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("user_addresses_user_id_idx").on(t.userId),
@@ -94,10 +101,7 @@ export const cartItems = pgTable(
       .references(() => productVariants.id, { onDelete: "cascade" }),
     qty: integer("qty").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.productVariantId] }),

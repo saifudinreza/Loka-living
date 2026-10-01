@@ -15,6 +15,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { PRODUCT_STATUSES, inList } from "./enums";
 
 export const rooms = pgTable("rooms", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -48,12 +49,14 @@ export const products = pgTable(
     careInstructions: text("care_instructions"),
     warrantyMonths: smallint("warranty_months"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("products_is_featured_idx").on(t.isFeatured), index("products_created_at_idx").on(t.createdAt)],
+  (t) => [
+    index("products_is_featured_idx").on(t.isFeatured),
+    index("products_created_at_idx").on(t.createdAt),
+    check("products_status_valid", inList(t.status, PRODUCT_STATUSES)),
+    check("products_weight_positive", sql`${t.weightKg} > 0`),
+  ],
 );
 
 export const productRooms = pgTable(
@@ -92,6 +95,8 @@ export const productVariants = pgTable(
     // pengaman terakhir terhadap oversell
     check("product_variants_stock_available_nonneg", sql`${t.stockAvailable} >= 0`),
     check("product_variants_stock_reserved_nonneg", sql`${t.stockReserved} >= 0`),
+    check("product_variants_price_nonneg", sql`${t.priceIdr} >= 0 AND ${t.priceUsd} >= 0`),
+    check("product_variants_compare_price_nonneg", sql`${t.compareAtPriceIdr} IS NULL OR ${t.compareAtPriceIdr} >= 0`),
   ],
 );
 

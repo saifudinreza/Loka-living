@@ -19,7 +19,9 @@ CREATE TABLE "product_variants" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "product_variants_sku_unique" UNIQUE("sku"),
 	CONSTRAINT "product_variants_stock_available_nonneg" CHECK ("product_variants"."stock_available" >= 0),
-	CONSTRAINT "product_variants_stock_reserved_nonneg" CHECK ("product_variants"."stock_reserved" >= 0)
+	CONSTRAINT "product_variants_stock_reserved_nonneg" CHECK ("product_variants"."stock_reserved" >= 0),
+	CONSTRAINT "product_variants_price_nonneg" CHECK ("product_variants"."price_idr" >= 0 AND "product_variants"."price_usd" >= 0),
+	CONSTRAINT "product_variants_compare_price_nonneg" CHECK ("product_variants"."compare_at_price_idr" IS NULL OR "product_variants"."compare_at_price_idr" >= 0)
 );
 --> statement-breakpoint
 CREATE TABLE "products" (
@@ -41,7 +43,9 @@ CREATE TABLE "products" (
 	"warranty_months" smallint,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "products_slug_unique" UNIQUE("slug")
+	CONSTRAINT "products_slug_unique" UNIQUE("slug"),
+	CONSTRAINT "products_status_valid" CHECK ("products"."status" IN ('active', 'inactive')),
+	CONSTRAINT "products_weight_positive" CHECK ("products"."weight_kg" > 0)
 );
 --> statement-breakpoint
 CREATE TABLE "rooms" (
@@ -91,7 +95,10 @@ CREATE TABLE "order_items" (
 	"product_variant_id" uuid NOT NULL,
 	"qty" integer NOT NULL,
 	"unit_price" bigint NOT NULL,
-	"subtotal" bigint NOT NULL
+	"subtotal" bigint NOT NULL,
+	CONSTRAINT "order_items_qty_positive" CHECK ("order_items"."qty" > 0),
+	CONSTRAINT "order_items_amounts_nonneg" CHECK ("order_items"."unit_price" >= 0 AND "order_items"."subtotal" >= 0),
+	CONSTRAINT "order_items_subtotal_matches" CHECK ("order_items"."subtotal" = "order_items"."qty" * "order_items"."unit_price")
 );
 --> statement-breakpoint
 CREATE TABLE "order_status_logs" (
@@ -101,7 +108,10 @@ CREATE TABLE "order_status_logs" (
 	"to_status" varchar(30) NOT NULL,
 	"actor" varchar(30) NOT NULL,
 	"note" text,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "order_status_logs_actor_valid" CHECK ("order_status_logs"."actor" IN ('system', 'customer', 'midtrans')),
+	CONSTRAINT "order_status_logs_to_status_valid" CHECK ("order_status_logs"."to_status" IN ('draft', 'awaiting_payment', 'paid', 'expired', 'cancelled', 'refunded')),
+	CONSTRAINT "order_status_logs_from_status_valid" CHECK ("order_status_logs"."from_status" IS NULL OR "order_status_logs"."from_status" IN ('draft', 'awaiting_payment', 'paid', 'expired', 'cancelled', 'refunded'))
 );
 --> statement-breakpoint
 CREATE TABLE "orders" (
@@ -123,7 +133,11 @@ CREATE TABLE "orders" (
 	"reserved_until" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "orders_order_token_unique" UNIQUE("order_token")
+	CONSTRAINT "orders_order_token_unique" UNIQUE("order_token"),
+	CONSTRAINT "orders_status_valid" CHECK ("orders"."status" IN ('draft', 'awaiting_payment', 'paid', 'expired', 'cancelled', 'refunded')),
+	CONSTRAINT "orders_payment_gateway_valid" CHECK ("orders"."payment_gateway" IS NULL OR "orders"."payment_gateway" IN ('midtrans', 'stripe')),
+	CONSTRAINT "orders_amounts_nonneg" CHECK ("orders"."subtotal_amount" >= 0 AND "orders"."shipping_amount" >= 0 AND "orders"."installation_amount" >= 0 AND "orders"."total_amount" >= 0),
+	CONSTRAINT "orders_total_matches" CHECK ("orders"."total_amount" = "orders"."subtotal_amount" + "orders"."shipping_amount" + "orders"."installation_amount")
 );
 --> statement-breakpoint
 CREATE TABLE "shipping_quotes" (
@@ -135,7 +149,8 @@ CREATE TABLE "shipping_quotes" (
 	"eta_days" varchar(20) NOT NULL,
 	"raw_response" jsonb,
 	"expires_at" timestamp with time zone NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "shipping_quotes_price_nonneg" CHECK ("shipping_quotes"."price" >= 0)
 );
 --> statement-breakpoint
 CREATE TABLE "payment_transactions" (
@@ -152,7 +167,9 @@ CREATE TABLE "payment_transactions" (
 	"raw_payload" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "payment_transactions_gateway_transaction_id_unique" UNIQUE("gateway_transaction_id")
+	CONSTRAINT "payment_transactions_gateway_transaction_id_unique" UNIQUE("gateway_transaction_id"),
+	CONSTRAINT "payment_transactions_gateway_valid" CHECK ("payment_transactions"."gateway" IN ('midtrans', 'stripe')),
+	CONSTRAINT "payment_transactions_amount_nonneg" CHECK ("payment_transactions"."amount" >= 0)
 );
 --> statement-breakpoint
 CREATE TABLE "processed_webhooks" (
@@ -211,10 +228,12 @@ CREATE TABLE "users" (
 	"name" varchar(120) NOT NULL,
 	"google_id" varchar(64),
 	"email_verified_at" timestamp with time zone,
+	"deleted_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email"),
-	CONSTRAINT "users_google_id_unique" UNIQUE("google_id")
+	CONSTRAINT "users_google_id_unique" UNIQUE("google_id"),
+	CONSTRAINT "users_email_lowercase" CHECK ("users"."email" = lower("users"."email"))
 );
 --> statement-breakpoint
 CREATE TABLE "wishlist_items" (
@@ -231,7 +250,7 @@ ALTER TABLE "testimonials" ADD CONSTRAINT "testimonials_product_id_products_id_f
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_variant_id_product_variants_id_fk" FOREIGN KEY ("product_variant_id") REFERENCES "public"."product_variants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "order_status_logs" ADD CONSTRAINT "order_status_logs_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_address_id_addresses_id_fk" FOREIGN KEY ("address_id") REFERENCES "public"."addresses"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "shipping_quotes" ADD CONSTRAINT "shipping_quotes_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -255,5 +274,6 @@ CREATE INDEX "shipping_quotes_order_id_idx" ON "shipping_quotes" USING btree ("o
 CREATE INDEX "payment_transactions_order_id_idx" ON "payment_transactions" USING btree ("order_id");--> statement-breakpoint
 CREATE INDEX "refresh_tokens_user_id_idx" ON "refresh_tokens" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "refresh_tokens_family_id_idx" ON "refresh_tokens" USING btree ("family_id");--> statement-breakpoint
+CREATE INDEX "refresh_tokens_expires_at_idx" ON "refresh_tokens" USING btree ("expires_at");--> statement-breakpoint
 CREATE INDEX "user_addresses_user_id_idx" ON "user_addresses" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "user_addresses_one_default_per_user" ON "user_addresses" USING btree ("user_id") WHERE "user_addresses"."is_default" = true;

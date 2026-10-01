@@ -1,7 +1,9 @@
+import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
   char,
+  check,
   date,
   index,
   integer,
@@ -14,6 +16,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { productVariants } from "./catalog";
+import { ORDER_ACTORS, ORDER_STATUSES, PAYMENT_GATEWAYS, inList } from "./enums";
 import { users } from "./users";
 
 // Salinan alamat saat order dibuat; sengaja terpisah dari user_addresses
@@ -39,7 +42,9 @@ export const orders = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     orderToken: varchar("order_token", { length: 64 }).notNull().unique(),
-    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    // RESTRICT, bukan SET NULL: user_id kosong berarti "pesanan tamu" yang bisa dibuka lewat token,
+    // jadi menghapus akun tidak boleh diam-diam mengubah pesanan privat menjadi pesanan tamu.
+    userId: uuid("user_id").references(() => users.id, { onDelete: "restrict" }),
     guestEmail: varchar("guest_email", { length: 150 }),
     guestPhone: varchar("guest_phone", { length: 20 }),
     addressId: uuid("address_id").references(() => addresses.id),
@@ -56,15 +61,25 @@ export const orders = pgTable(
     wantsInstallation: boolean("wants_installation").notNull().default(false),
     reservedUntil: timestamp("reserved_until", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("orders_status_idx").on(t.status),
     index("orders_user_id_idx").on(t.userId),
     index("orders_status_reserved_until_idx").on(t.status, t.reservedUntil),
+    check("orders_status_valid", inList(t.status, ORDER_STATUSES)),
+    check(
+      "orders_payment_gateway_valid",
+      sql`${t.paymentGateway} IS NULL OR ${inList(t.paymentGateway, PAYMENT_GATEWAYS)}`,
+    ),
+    check(
+      "orders_amounts_nonneg",
+      sql`${t.subtotalAmount} >= 0 AND ${t.shippingAmount} >= 0 AND ${t.installationAmount} >= 0 AND ${t.totalAmount} >= 0`,
+    ),
+    check(
+      "orders_total_matches",
+      sql`${t.totalAmount} = ${t.subtotalAmount} + ${t.shippingAmount} + ${t.installationAmount}`,
+    ),
   ],
 );
 
@@ -84,7 +99,12 @@ export const orderItems = pgTable(
     unitPrice: bigint("unit_price", { mode: "number" }).notNull(),
     subtotal: bigint("subtotal", { mode: "number" }).notNull(),
   },
-  (t) => [index("order_items_order_id_idx").on(t.orderId)],
+  (t) => [
+    index("order_items_order_id_idx").on(t.orderId),
+    check("order_items_qty_positive", sql`${t.qty} > 0`),
+    check("order_items_amounts_nonneg", sql`${t.unitPrice} >= 0 AND ${t.subtotal} >= 0`),
+    check("order_items_subtotal_matches", sql`${t.subtotal} = ${t.qty} * ${t.unitPrice}`),
+  ],
 );
 
 export const shippingQuotes = pgTable(
@@ -102,7 +122,7 @@ export const shippingQuotes = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("shipping_quotes_order_id_idx").on(t.orderId)],
+  (t) => [index("shipping_quotes_order_id_idx").on(t.orderId), check("shipping_quotes_price_nonneg", sql`${t.price} >= 0`)],
 );
 
 export const orderStatusLogs = pgTable(
@@ -119,5 +139,13 @@ export const orderStatusLogs = pgTable(
     note: text("note"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("order_status_logs_order_created_idx").on(t.orderId, t.createdAt)],
+  (t) => [
+    index("order_status_logs_order_created_idx").on(t.orderId, t.createdAt),
+    check("order_status_logs_actor_valid", inList(t.actor, ORDER_ACTORS)),
+    check("order_status_logs_to_status_valid", inList(t.toStatus, ORDER_STATUSES)),
+    check(
+      "order_status_logs_from_status_valid",
+      sql`${t.fromStatus} IS NULL OR ${inList(t.fromStatus, ORDER_STATUSES)}`,
+    ),
+  ],
 );
