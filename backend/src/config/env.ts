@@ -34,6 +34,8 @@ if (jwtAccessSecret.length < 32) {
 export const env = {
   PORT: int("PORT", 8000),
   DATABASE_URL: required("DATABASE_URL"),
+  // Wajib true di production (data pelanggan lewat jaringan). Lokal biasanya false.
+  DATABASE_SSL: bool("DATABASE_SSL", false),
   FRONTEND_URL: optional("FRONTEND_URL", "http://localhost:3000"),
 
   JWT_ACCESS_SECRET: jwtAccessSecret,
