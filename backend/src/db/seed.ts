@@ -1,40 +1,27 @@
-import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { like } from "drizzle-orm";
+import { and, inArray, like, notInArray, sql } from "drizzle-orm";
 import { db } from "./client";
 import { productRooms, productVariants, products, rooms, testimonials } from "./schema";
+import {
+  SEED_PRODUCT_ID_PREFIX,
+  type SeedProduct,
+  assertSeedAllowed,
+  findMissingImages,
+  shouldSeedExampleTestimonials,
+  validateSeedData,
+} from "./seed-checks";
 
 // ---------------------------------------------------------------------------
 // Data. Nilai produk & varian disalin persis dari ProductSeeder Laravel lama
 // (git show bf3765d:backend/database/seeders/ProductSeeder.php).
+//
+// File ini adalah SUMBER KEBENARAN data katalog sampai ada panel admin. Ubah harga, deskripsi,
+// foto, produk unggulan, dan ruangan DI SINI lalu jalankan `bun run db:seed`. Perubahan yang
+// dibuat langsung lewat SQL akan ditimpa seed berikutnya. Pengecualian: STOK (lihat SeedVariant).
+//
+// Berhenti menjual produk: hapus dari PRODUCTS. Seed mengubah statusnya jadi "inactive"
+// (bukan menghapus, karena pesanan lama masih merujuk ke variannya).
 // ---------------------------------------------------------------------------
-
-interface SeedVariant {
-  sku: string;
-  material: string;
-  colorHex: string;
-  priceIdr: number;
-  priceUsd: string;
-  compareAtPriceIdr?: number;
-  stockAvailable: number;
-  // Path foto relatif terhadap frontend/public, diawali "/". Foto nomor 1 = foto utama.
-  images: string[];
-}
-
-interface SeedProduct {
-  id: string;
-  name: string;
-  slug: string;
-  category: "chairs" | "tables" | "cabinets" | "shelves";
-  description: string;
-  lengthCm: string;
-  widthCm: string;
-  heightCm: string;
-  weightKg: string;
-  // Foto konteks ruangan: "/images/products/{slug}-ruang-{nomor}.jpg"
-  gallery: string[];
-  variants: SeedVariant[];
-}
 
 // Ilustrasi sementara yang sudah ada di frontend. Ganti dengan foto asli di `images` kalau sudah ada:
 // simpan file di frontend/public/images/products/, tulis path-nya di sini, lalu `bun run db:seed`.
@@ -178,36 +165,13 @@ const EXAMPLE_TESTIMONIALS = [
 
 const PUBLIC_DIR = resolve(import.meta.dir, "../../../frontend/public");
 
-export function findMissingImages(paths: string[], publicDir = PUBLIC_DIR): string[] {
-  return [...new Set(paths)].filter((p) => !existsSync(resolve(publicDir, "." + p)));
-}
-
-export function validateSeedData() {
-  const roomSlugs = new Set<string>(ROOMS.map((r) => r.slug));
-  const productSlugs = new Set(PRODUCTS.map((p) => p.slug));
-  for (const [slug, list] of Object.entries(PRODUCT_ROOMS)) {
-    if (!productSlugs.has(slug)) throw new Error(`PRODUCT_ROOMS: produk tidak dikenal "${slug}"`);
-    for (const r of list) if (!roomSlugs.has(r)) throw new Error(`PRODUCT_ROOMS: ruangan tidak dikenal "${r}"`);
-  }
-  for (const slug of FEATURED_SLUGS) if (!productSlugs.has(slug)) throw new Error(`FEATURED_SLUGS: produk tidak dikenal "${slug}"`);
-  for (const r of ROOMS) {
-    if (!Object.values(PRODUCT_ROOMS).some((l) => l.includes(r.slug))) throw new Error(`Ruangan "${r.slug}" tidak punya produk`);
-  }
-  for (const p of PRODUCTS) {
-    for (const v of p.variants) {
-      if (v.images.length === 0) throw new Error(`Varian ${v.sku} tidak punya foto (isi minimal ilustrasi sementara)`);
-      for (const path of [...v.images, ...p.gallery]) {
-        if (!path.startsWith("/images/")) throw new Error(`Path foto harus diawali "/images/": ${path}`);
-      }
-    }
-  }
-}
-
-export async function runSeed() {
-  validateSeedData();
+export async function runSeed(env = process.env) {
+  assertSeedAllowed(env);
+  validateSeedData({ products: PRODUCTS, rooms: ROOMS, productRooms: PRODUCT_ROOMS, featuredSlugs: FEATURED_SLUGS });
+  const withExamples = shouldSeedExampleTestimonials(env);
 
   const allImages = PRODUCTS.flatMap((p) => [...p.gallery, ...p.variants.flatMap((v) => v.images)]);
-  for (const missing of findMissingImages(allImages)) {
+  for (const missing of findMissingImages(allImages, PUBLIC_DIR)) {
     console.warn(`PERINGATAN: file foto tidak ditemukan di frontend/public: ${missing}`);
   }
 
@@ -224,6 +188,7 @@ export async function runSeed() {
         widthCm: p.widthCm,
         heightCm: p.heightCm,
         weightKg: p.weightKg,
+        status: "active",
         isFeatured: FEATURED_SLUGS.includes(p.slug),
         galleryUrls: p.gallery,
         warrantyMonths: WARRANTY_MONTHS,
@@ -232,11 +197,37 @@ export async function runSeed() {
       await tx.insert(products).values(values).onConflictDoUpdate({ target: products.id, set: updatable });
     }
 
+    // Produk ber-id seed yang sudah tidak ada di PRODUCTS: nonaktifkan, jangan hapus.
+    const seedIds = PRODUCTS.map((p) => p.id);
+    const deactivated = await tx
+      .update(products)
+      .set({ status: "inactive" })
+      .where(and(sql`${products.id}::text LIKE ${SEED_PRODUCT_ID_PREFIX + "%"}`, notInArray(products.id, seedIds)))
+      .returning({ slug: products.slug });
+    for (const p of deactivated) console.warn(`INFO: produk "${p.slug}" tidak ada lagi di seed, dinonaktifkan.`);
+
+    // Varian yang sudah ada: dipakai untuk peringatan stok dan untuk mencegah varian pindah produk.
+    const existing = await tx
+      .select({ sku: productVariants.sku, productId: productVariants.productId, stock: productVariants.stockAvailable })
+      .from(productVariants)
+      .where(inArray(productVariants.sku, PRODUCTS.flatMap((p) => p.variants.map((v) => v.sku))));
+    const existingBySku = new Map(existing.map((e) => [e.sku, e]));
+
     // Varian (upsert by sku). Stok TIDAK ditimpa saat seed diulang: kalau tidak, menjalankan seed
     // untuk memperbarui foto akan mereset stok yang sudah berubah karena penjualan/reservasi.
     let variantCount = 0;
     for (const p of PRODUCTS) {
       for (const v of p.variants) {
+        const prev = existingBySku.get(v.sku);
+        if (prev && prev.productId !== p.id) {
+          throw new Error(`SKU ${v.sku} di database milik produk lain (${prev.productId}); tidak dipindahkan ke ${p.slug}.`);
+        }
+        if (prev && prev.stock !== v.stockAvailable) {
+          console.warn(
+            `INFO: stok ${v.sku} di seed (${v.stockAvailable}) beda dengan database (${prev.stock}). ` +
+              "Stok varian yang sudah ada tidak diubah seed; ubah lewat database kalau memang perlu.",
+          );
+        }
         const values = {
           productId: p.id,
           sku: v.sku,
@@ -248,7 +239,8 @@ export async function runSeed() {
           stockAvailable: v.stockAvailable,
           imageUrls: v.images,
         };
-        const { stockAvailable: _stock, sku: _sku, ...updatable } = values;
+        // productId tidak ikut di-update supaya varian tidak pernah pindah ke produk lain.
+        const { stockAvailable: _stock, sku: _sku, productId: _pid, ...updatable } = values;
         await tx.insert(productVariants).values(values).onConflictDoUpdate({ target: productVariants.sku, set: updatable });
         variantCount++;
       }
@@ -273,8 +265,9 @@ export async function runSeed() {
     await tx.insert(productRooms).values(links);
 
     // Testimoni contoh: hanya baris berawalan [CONTOH]; testimoni asli tidak disentuh
+    // Testimoni contoh: selalu dihapus; hanya dibuat ulang di luar production.
     await tx.delete(testimonials).where(like(testimonials.customerName, `${EXAMPLE_PREFIX}%`));
-    await tx.insert(testimonials).values(
+    if (withExamples) await tx.insert(testimonials).values(
       EXAMPLE_TESTIMONIALS.map((t, i) => ({
         customerName: EXAMPLE_PREFIX + t.customerName,
         city: t.city,
@@ -286,7 +279,12 @@ export async function runSeed() {
       })),
     );
 
-    return { products: PRODUCTS.length, variants: variantCount, rooms: ROOMS.length, testimonials: EXAMPLE_TESTIMONIALS.length };
+    return {
+      products: PRODUCTS.length,
+      variants: variantCount,
+      rooms: ROOMS.length,
+      testimonials: withExamples ? EXAMPLE_TESTIMONIALS.length : 0,
+    };
   });
 
   console.log(
