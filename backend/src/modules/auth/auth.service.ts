@@ -133,3 +133,76 @@ export async function revokeRefreshToken(rawToken: string): Promise<void> {
     .set({ revokedAt: new Date() })
     .where(and(eq(refreshTokens.tokenHash, sha256Hex(rawToken)), isNull(refreshTokens.revokedAt)));
 }
+
+/** Kegagalan login Google yang dikirim ke frontend sebagai ?error=<code> (bukan JSON). */
+export class GoogleLoginError extends Error {
+  constructor(public code: string) {
+    super(code);
+    this.name = "GoogleLoginError";
+  }
+}
+
+export interface GoogleClaims {
+  sub: string;
+  email: string;
+  name?: string;
+}
+
+/**
+ * Cari / hubungkan / buat user dari klaim Google, lalu terbitkan refresh token (family baru).
+ * Pemanggil wajib sudah memastikan email_verified === true: menghubungkan akun berdasarkan
+ * email hanya aman kalau email itu sudah dibuktikan milik orang yang login.
+ */
+export async function loginWithGoogle(claims: GoogleClaims, userAgent: string | null): Promise<{ refreshToken: string }> {
+  const email = normalizeEmail(claims.email);
+  // kolom users.email varchar(150): tolak lebih awal dengan kode yang jelas, bukan error database
+  if (email.length > 150) throw new GoogleLoginError("google_email_invalid");
+
+  return db.transaction(async (tx) => {
+    const now = new Date();
+
+    let [user] = await tx.select().from(users).where(eq(users.googleId, claims.sub)).limit(1);
+
+    if (!user) {
+      const [byEmail] = await tx.select().from(users).where(eq(users.email, email)).limit(1);
+
+      if (byEmail) {
+        // email ini sudah ditautkan ke akun Google lain: jangan ditimpa
+        if (byEmail.googleId && byEmail.googleId !== claims.sub) throw new GoogleLoginError("google_account_conflict");
+
+        // Email akun ini belum pernah dibuktikan pemiliknya. Bisa saja didaftarkan orang lain dengan email korban,
+        // jadi password-nya dibuang dan semua sesinya dicabut: sejak sekarang hanya pemilik Google yang bisa masuk.
+        const unverified = byEmail.emailVerifiedAt === null;
+        if (unverified) {
+          await tx
+            .update(refreshTokens)
+            .set({ revokedAt: now })
+            .where(and(eq(refreshTokens.userId, byEmail.id), isNull(refreshTokens.revokedAt)));
+        }
+
+        [user] = await tx
+          .update(users)
+          .set({
+            googleId: claims.sub,
+            emailVerifiedAt: byEmail.emailVerifiedAt ?? now,
+            ...(unverified ? { passwordHash: null } : {}),
+          })
+          .where(eq(users.id, byEmail.id))
+          .returning();
+      } else {
+        const name = claims.name?.trim() || email.split("@")[0]!;
+        [user] = await tx
+          .insert(users)
+          .values({ email, googleId: claims.sub, passwordHash: null, emailVerifiedAt: now, name: name.slice(0, 120) })
+          .onConflictDoNothing()
+          .returning();
+        // dua login Google pertama bersamaan: yang kalah balapan diminta mengulang
+        if (!user) throw new GoogleLoginError("google_login_failed");
+      }
+    }
+
+    if (!user || user.deletedAt) throw new GoogleLoginError("google_account_disabled");
+
+    return { refreshToken: await issueRefreshToken(tx, user.id, userAgent) };
+  });
+}

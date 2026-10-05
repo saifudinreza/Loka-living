@@ -78,6 +78,12 @@ npm install
 npm run dev
 ```
 
+**Google login (optional)**
+
+Create a Web application OAuth client in Google Cloud Console and add `http://localhost:8000/api/auth/google/callback` as an authorized redirect URI. Then fill `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URI` in `backend/.env` (leave them empty to disable it; the endpoint then answers 503).
+
+Always start the flow from `http://localhost:8000/api/auth/google`, using the same host as `GOOGLE_REDIRECT_URI`. Starting from `127.0.0.1` instead of `localhost` drops the state cookie and ends in `?error=google_state_mismatch`.
+
 ## Author
 
 Built by [Saifudin Reza](https://github.com/saifudinreza). Open to Junior Software Engineer roles: [portfolio](https://zare-world-portofolio.vercel.app/) · [LinkedIn](https://linkedin.com/in/saifudin-reza-y2003)
