@@ -2,6 +2,7 @@ import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { env } from "./config/env";
 import { errorHandler } from "./lib/errors";
+import { authRoutes } from "./modules/auth/auth.routes";
 
 export interface AppOptions {
   enableJobs?: boolean;
@@ -18,7 +19,7 @@ export function createApp(_options: AppOptions = {}) {
       }),
     )
     .get("/health", () => ({ status: "ok" }))
-    .group("/api", (api) => api);
+    .group("/api", (api) => api.use(authRoutes));
 }
 
 export type App = ReturnType<typeof createApp>;
