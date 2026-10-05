@@ -8,13 +8,14 @@
         "@elysiajs/cors": "^1.4.2",
         "@elysiajs/cron": "^1.4.2",
         "@elysiajs/jwt": "^1.4.2",
+        "@elysiajs/openapi": "^1.4.16",
         "arctic": "^3.7.0",
         "drizzle-orm": "^0.45.3",
         "elysia": "^1.4.30",
         "postgres": "^3.4.9",
       },
       "devDependencies": {
-        "@types/bun": "latest",
+        "@types/bun": "^1.4.2",
         "drizzle-kit": "^0.31.11",
       },
       "peerDependencies": {
@@ -32,6 +33,8 @@
     "@elysiajs/cron": ["@elysiajs/cron@1.4.2", "", { "dependencies": { "croner": "^6.0.3" }, "peerDependencies": { "elysia": ">= 1.4.0" } }, "sha512-osQrgInKlW0m0/NUuBUX7+O9CFnx5NnG3NszeCaokTChaCVYciv/S4mmXzZZ8+Zg9sI8BmEQbV+L19wKStXYZw=="],
 
     "@elysiajs/jwt": ["@elysiajs/jwt@1.4.2", "", { "dependencies": { "jose": "^6.0.11" }, "peerDependencies": { "elysia": ">= 1.4.27" } }, "sha512-gSPjF8KoL7cQIxL3kb+Ui9g5jpBdO4iUTe2+F52w66JVFct2K8cTLum8PEArxRZNg4PBrg100h6i1bJ2zfcqMg=="],
+
+    "@elysiajs/openapi": ["@elysiajs/openapi@1.4.16", "", { "peerDependencies": { "@sinclair/typebox": ">= 0.34.0 < 1", "elysia": ">= 1.4.0", "typescript": ">= 5.0.0" } }, "sha512-kj8RBffE4J6myjm7nPPj6Dw1ujWt45NkdGW5sG9u3T0OfUzKN71s630/LEjajGo5jRZqFF3VHyk40lwXH2AbmQ=="],
 
     "@esbuild-kit/core-utils": ["@esbuild-kit/core-utils@3.3.2", "", { "dependencies": { "esbuild": "~0.18.20", "source-map-support": "^0.5.21" } }, "sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ=="],
 

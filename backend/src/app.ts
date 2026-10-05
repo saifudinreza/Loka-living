@@ -1,6 +1,7 @@
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { env } from "./config/env";
+import { docsRoutes } from "./docs/docs.routes";
 import { errorHandler } from "./lib/errors";
 import { authRoutes } from "./modules/auth/auth.routes";
 
@@ -10,7 +11,7 @@ export interface AppOptions {
 
 // enableJobs dipakai issue 17 (cron); test memanggil createApp({ enableJobs: false }).
 export function createApp(_options: AppOptions = {}) {
-  return new Elysia()
+  const app = new Elysia()
     .use(errorHandler)
     .use(
       cors({
@@ -20,6 +21,11 @@ export function createApp(_options: AppOptions = {}) {
     )
     .get("/health", () => ({ status: "ok" }))
     .group("/api", (api) => api.use(authRoutes()));
+
+  // Swagger + diagram alur hanya untuk development; di production peta API tidak dibuka.
+  if (process.env.NODE_ENV !== "production") app.use(docsRoutes);
+
+  return app;
 }
 
 export type App = ReturnType<typeof createApp>;
