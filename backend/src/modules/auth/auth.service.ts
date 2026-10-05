@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../../db/client";
-import { users } from "../../db/schema";
+import { refreshTokens, users } from "../../db/schema";
+import { sha256Hex } from "../../lib/crypto";
 import { AppError } from "../../lib/errors";
 import { issueRefreshToken } from "./tokens";
 
@@ -72,4 +73,63 @@ export async function loginUser(input: {
 
   const refreshToken = await issueRefreshToken(db, row.id, input.userAgent);
   return { user: { id: row.id, email: row.email, name: row.name }, refreshToken };
+}
+
+type RefreshFailure = "INVALID" | "REUSED" | "EXPIRED";
+
+const REFRESH_ERRORS: Record<RefreshFailure, AppError> = {
+  INVALID: new AppError(401, "REFRESH_TOKEN_INVALID", "Sesi tidak valid. Silakan login lagi."),
+  REUSED: new AppError(401, "REFRESH_TOKEN_REUSED", "Sesi tidak valid. Silakan login lagi."),
+  EXPIRED: new AppError(401, "REFRESH_TOKEN_EXPIRED", "Sesi sudah berakhir. Silakan login lagi."),
+};
+
+/** Rotasi: token lama dicabut, token baru dalam family yang sama. Pemakaian ulang token yang sudah dicabut mencabut seluruh family. */
+export async function refreshSession(
+  rawToken: string,
+  userAgent: string | null,
+): Promise<{ user: PublicUser; refreshToken: string }> {
+  const tokenHash = sha256Hex(rawToken);
+
+  // Kegagalan dikembalikan sebagai nilai, bukan di-throw di dalam transaksi:
+  // throw akan me-rollback pencabutan family pada kasus reuse.
+  const result = await db.transaction(async (tx) => {
+    // FOR UPDATE: dua refresh paralel dengan cookie sama diserialkan, yang kedua melihat token sudah dicabut
+    const [row] = await tx.select().from(refreshTokens).where(eq(refreshTokens.tokenHash, tokenHash)).for("update");
+    if (!row) return { failure: "INVALID" as const };
+
+    const now = new Date();
+
+    if (row.revokedAt) {
+      await tx
+        .update(refreshTokens)
+        .set({ revokedAt: now })
+        .where(and(eq(refreshTokens.familyId, row.familyId), isNull(refreshTokens.revokedAt)));
+      console.warn("[auth] refresh token reuse terdeteksi", { userId: row.userId, familyId: row.familyId });
+      return { failure: "REUSED" as const };
+    }
+
+    if (row.expiresAt <= now) return { failure: "EXPIRED" as const };
+
+    const [user] = await tx
+      .select({ id: users.id, email: users.email, name: users.name })
+      .from(users)
+      .where(and(eq(users.id, row.userId), isNull(users.deletedAt)))
+      .limit(1);
+    if (!user) return { failure: "INVALID" as const };
+
+    await tx.update(refreshTokens).set({ revokedAt: now }).where(eq(refreshTokens.id, row.id));
+    const refreshToken = await issueRefreshToken(tx, user.id, userAgent, row.familyId);
+    return { user, refreshToken };
+  });
+
+  if ("failure" in result && result.failure) throw REFRESH_ERRORS[result.failure];
+  return result;
+}
+
+/** Idempoten: token tidak ditemukan atau sudah dicabut tidak dianggap error. Hanya token ini yang dicabut. */
+export async function revokeRefreshToken(rawToken: string): Promise<void> {
+  await db
+    .update(refreshTokens)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(refreshTokens.tokenHash, sha256Hex(rawToken)), isNull(refreshTokens.revokedAt)));
 }
