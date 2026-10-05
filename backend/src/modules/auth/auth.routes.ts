@@ -34,6 +34,7 @@ import { Elysia, t } from "elysia";
 import { env } from "../../config/env";
 import { timingSafeEqualString } from "../../lib/crypto";
 import { createRateLimiter } from "../../lib/rate-limit";
+import { authDocs } from "./auth.docs";
 import { requireAuth } from "./auth.guard";
 import {
   GoogleLoginError,
@@ -122,6 +123,7 @@ export function authRoutes(google: Google | null = defaultGoogle) {
       },
       {
         beforeHandle: limitByIp,
+        detail: authDocs.register,
         body: t.Object({
           email: t.String({ maxLength: 254 }),
           password: t.String({ minLength: 8, maxLength: 72 }),
@@ -145,6 +147,7 @@ export function authRoutes(google: Google | null = defaultGoogle) {
       },
       {
         beforeHandle: limitByIp,
+        detail: authDocs.login,
         body: t.Object({
           email: t.String({ maxLength: 254 }),
           password: t.String({ minLength: 1, maxLength: 72 }),
@@ -180,7 +183,7 @@ export function authRoutes(google: Google | null = defaultGoogle) {
         clearRefreshCookie(cookie);
         throw err;
       }
-    })
+    }, { detail: authDocs.refresh })
 
     /**
      * POST /api/auth/logout — keluar.
@@ -193,7 +196,7 @@ export function authRoutes(google: Google | null = defaultGoogle) {
       if (typeof raw === "string" && raw !== "") await revokeRefreshToken(raw);
       clearRefreshCookie(cookie);
       set.status = 204;
-    })
+    }, { detail: authDocs.logout })
 
     /**
      * Route login Google (GET /api/auth/google dan /google/callback), dibuat di
@@ -226,7 +229,7 @@ export function authRoutes(google: Google | null = defaultGoogle) {
         google_linked: user.googleId !== null,
         created_at: user.createdAt.toISOString(),
       },
-    }));
+    }), { detail: authDocs.me });
 }
 
 /**
@@ -292,7 +295,7 @@ function googleRoutes(google: Google | null, limitByIp: LimitByIp) {
      * Buat state + code_verifier, simpan di dua cookie httpOnly (path khusus
      * /api/auth/google, umur 10 menit), lalu redirect 302 ke Google.
      */
-    .get("/", ({ cookie, redirect }) => {
+    .get("", ({ cookie, redirect }) => {
       if (!google) {
         return new Response(
           JSON.stringify({ error: "Login Google belum diaktifkan.", code: "GOOGLE_AUTH_DISABLED" }),
@@ -313,7 +316,7 @@ function googleRoutes(google: Google | null, limitByIp: LimitByIp) {
       cookie[GOOGLE_VERIFIER_COOKIE]!.set({ value: codeVerifier, ...options });
 
       return redirect(google.createAuthorizationURL(state, codeVerifier, ["openid", "profile", "email"]).toString(), 302);
-    }, { beforeHandle: limitByIp })
+    }, { beforeHandle: limitByIp, detail: authDocs.googleStart })
     /**
      * GET /api/auth/google/callback — langkah 3: Google mengembalikan user ke sini.
      *
@@ -388,6 +391,7 @@ function googleRoutes(google: Google | null, limitByIp: LimitByIp) {
       },
       {
         beforeHandle: limitByIp,
+        detail: authDocs.googleCallback,
         query: t.Object({
           code: t.Optional(t.String()),
           state: t.Optional(t.String()),

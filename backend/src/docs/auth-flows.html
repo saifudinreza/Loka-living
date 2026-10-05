@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alur Auth — Loka Living</title>
+  <style>
+    :root { --bg: #f6f3ec; --fg: #2b2b26; --muted: #6b6b60; --card: #fff; --line: #e2ddd0; --olive: #5f6b45; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #1b1c18; --fg: #ecebe4; --muted: #a3a396; --card: #25261f; --line: #3a3b31; --olive: #a3b37a; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, sans-serif; }
+    main { max-width: 980px; margin: 0 auto; padding: 32px 16px 80px; }
+    h1 { font-size: 28px; margin: 0 0 4px; }
+    h2 { font-size: 21px; margin: 40px 0 6px; color: var(--olive); }
+    p, li { color: var(--muted); }
+    a { color: var(--olive); }
+    nav { margin: 12px 0 0; display: flex; gap: 16px; flex-wrap: wrap; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; }
+    ul { padding-left: 20px; }
+    code { background: var(--line); padding: 1px 6px; border-radius: 4px; font-size: 14px; color: var(--fg); }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Alur Auth Loka Living</h1>
+  <p>Tiga alur utama. Dua jenis token: <b>access token</b> (JWT, 15 menit, dikirim di header) dan <b>refresh token</b> (30 hari, di cookie httpOnly, hanya hash-nya disimpan di database).</p>
+  <nav>
+    <a href="#biasa">1. Register &amp; login</a>
+    <a href="#refresh">2. Refresh &amp; logout</a>
+    <a href="#google">3. Login Google</a>
+    <a href="/swagger">Swagger UI</a>
+  </nav>
+
+  <h2 id="biasa">1. Register &amp; login biasa</h2>
+  <p>Register dan login menghasilkan response yang sama: access token di body, refresh token di cookie.</p>
+  <div class="card"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant B as Browser
+  participant API as Backend
+  participant DB as Database
+  B->>API: POST /api/auth/register {email, password, name}
+  API->>API: rapikan email, validasi, hash password (argon2id)
+  API->>DB: INSERT user (ON CONFLICT DO NOTHING)
+  alt email sudah ada
+    API-->>B: 409 EMAIL_TAKEN
+  else baru
+    API->>DB: simpan hash refresh token (family baru)
+    API-->>B: 201 {access_token, user} + Set-Cookie refresh_token
+  end
+  Note over B,API: Login: sama, tapi cek password.<br/>Email tak ada / password salah / akun Google / akun dihapus<br/>semuanya 401 INVALID_CREDENTIALS (pesan & waktu sama)
+  B->>API: POST /api/auth/login {email, password}
+  API->>DB: cari user, verify password
+  API-->>B: 200 {access_token, user} + Set-Cookie refresh_token
+  B->>API: GET /api/auth/me (Authorization: Bearer access_token)
+  API-->>B: 200 {user}
+  </pre></div>
+
+  <h2 id="refresh">2. Refresh token &amp; logout</h2>
+  <p>Saat access token habis (401), frontend memanggil <code>/refresh</code>. Setiap refresh token hanya boleh dipakai <b>sekali</b> (rotasi). Memakai token lama lagi dianggap pencurian dan seluruh sesi (family) dicabut.</p>
+  <div class="card"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant B as Browser
+  participant API as Backend
+  participant DB as Database
+  B->>API: POST /api/auth/refresh (cookie refresh_token)
+  API->>DB: BEGIN, cari hash token FOR UPDATE
+  alt tidak ditemukan
+    API-->>B: 401 REFRESH_TOKEN_INVALID + hapus cookie
+  else sudah dicabut (dipakai ulang)
+    API->>DB: cabut SELURUH family
+    API-->>B: 401 REFRESH_TOKEN_REUSED + hapus cookie
+  else kedaluwarsa
+    API-->>B: 401 REFRESH_TOKEN_EXPIRED + hapus cookie
+  else normal
+    API->>DB: cabut token lama, simpan token baru (family sama)
+    API-->>B: 200 {access_token} + Set-Cookie token baru
+  end
+  Note over B,API: Dua refresh paralel dengan cookie sama:<br/>FOR UPDATE membuat tepat satu yang berhasil
+  B->>API: POST /api/auth/logout
+  API->>DB: cabut token ini saja (perangkat lain tetap login)
+  API-->>B: 204 + hapus cookie (selalu, idempoten)
+  </pre></div>
+
+  <h2 id="google">3. Login dengan Google</h2>
+  <p>OAuth 2.0 authorization code flow dengan PKCE. Access token <b>tidak</b> lewat URL; frontend mengambilnya lewat <code>/refresh</code> setelah redirect. Coba dengan membuka <a href="/api/auth/google">/api/auth/google</a> di browser (butuh <code>GOOGLE_*</code> di .env, kalau kosong menjawab 503).</p>
+  <div class="card"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant B as Browser
+  participant API as Backend
+  participant G as Google
+  participant DB as Database
+  B->>API: GET /api/auth/google
+  API->>API: buat state + code_verifier (PKCE)
+  API-->>B: 302 ke Google + cookie state & verifier (10 menit)
+  B->>G: login & setuju
+  G-->>B: 302 ke /api/auth/google/callback?code&state
+  B->>API: GET /api/auth/google/callback (+ cookie)
+  alt state tidak cocok dengan cookie
+    API-->>B: 302 FRONTEND/auth/callback?error=google_state_mismatch
+  else cocok
+    API->>G: tukar code + code_verifier
+    G-->>API: id_token (sub, email, email_verified, name)
+    alt email belum terverifikasi
+      API-->>B: 302 ...?error=google_email_unverified
+    else
+      API->>DB: cari google_id, atau hubungkan email yang sama, atau buat user baru
+      API->>DB: simpan hash refresh token (family baru)
+      API-->>B: 302 FRONTEND/auth/callback + Set-Cookie refresh_token
+    end
+  end
+  B->>API: POST /api/auth/refresh (dari halaman /auth/callback frontend)
+  API-->>B: 200 {access_token, user}
+  </pre></div>
+
+  <ul>
+    <li><b>Akun email/password yang sama:</b> dihubungkan ke Google. Kalau emailnya belum pernah terverifikasi, password lamanya dibuang dan sesinya dicabut (mencegah pembajakan lewat pendaftaran dengan email korban).</li>
+    <li><b>Kode error callback:</b> <code>google_state_mismatch</code>, <code>google_access_denied</code>, <code>google_exchange_failed</code>, <code>google_email_unverified</code>, <code>google_email_invalid</code>, <code>google_account_conflict</code>, <code>google_account_disabled</code>, <code>google_login_failed</code>, <code>google_auth_disabled</code>.</li>
+  </ul>
+</main>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  mermaid.initialize({ startOnLoad: true, theme: dark ? "dark" : "neutral" });
+</script>
+</body>
+</html>
