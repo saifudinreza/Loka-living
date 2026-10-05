@@ -1,6 +1,6 @@
-import { afterAll, describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, spyOn, test } from "bun:test";
 import { Google } from "arctic";
-import { count, eq, like } from "drizzle-orm";
+import { and, count, eq, isNull, like } from "drizzle-orm";
 import { Elysia } from "elysia";
 import { env } from "../src/config/env";
 import { db } from "../src/db/client";
@@ -100,8 +100,11 @@ describe("GET /api/auth/google/callback", () => {
     get(appWith(client), "/callback?code=c&state=s", "google_oauth_state=s; google_code_verifier=v");
 
   test("tukar code gagal → google_exchange_failed", async () => {
+    const spy = spyOn(console, "error").mockImplementation(() => {});
     const res = await cb(fakeWith(() => { throw new Error("invalid_grant"); }));
     expect(errorOf(res)).toBe("google_exchange_failed");
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 
   test("email_verified bukan true → google_email_unverified, tidak ada user dibuat", async () => {
@@ -120,6 +123,15 @@ describe("GET /api/auth/google/callback", () => {
     expect(res.headers.get("location")).toBe(`${env.FRONTEND_URL}/auth/callback`);
     expect(res.headers.getSetCookie().some((c) => c.startsWith("refresh_token=") && c.includes("HttpOnly"))).toBe(true);
     expect(await db.select().from(users).where(eq(users.email, email))).toHaveLength(1);
+  });
+});
+
+describe("rate limit", () => {
+  test("request ke-11 ke /google dalam semenit → 429", async () => {
+    const app = appWith(fakeGoogle);
+    let last = 0;
+    for (let i = 0; i < 11; i++) last = (await get(app, "")).status;
+    expect(last).toBe(429);
   });
 });
 
@@ -160,7 +172,66 @@ describe("loginWithGoogle", () => {
     expect(rows[0]!.id).toBe(user.id);
     expect(rows[0]!.googleId).toBe(sub);
     expect(rows[0]!.emailVerifiedAt).not.toBeNull();
-    expect(rows[0]!.passwordHash).not.toBeNull();
+  });
+
+  test("akun belum terverifikasi: password dibuang dan semua sesi dicabut saat dihubungkan", async () => {
+    const email = `${PREFIX}${unique()}@contoh.com`;
+    const { user } = await registerUser({ email, password: "password-rahasia", name: "Penyerang", userAgent: null });
+
+    await loginWithGoogle({ sub: `sub-${unique()}`, email, name: "Korban" }, null);
+
+    const [row] = await db.select().from(users).where(eq(users.id, user.id));
+    expect(row!.passwordHash).toBeNull();
+
+    // sesi yang dibuat saat register dicabut; yang aktif hanya sesi login Google
+    const active = await db
+      .select()
+      .from(refreshTokens)
+      .where(and(eq(refreshTokens.userId, user.id), isNull(refreshTokens.revokedAt)));
+    expect(active).toHaveLength(1);
+
+    // dan password lama tidak bisa dipakai login lagi
+    const res = await appWith(null).handle(
+      new Request("http://localhost/api/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, password: "password-rahasia" }),
+      }),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  test("akun yang emailnya sudah terverifikasi: password tetap ada saat dihubungkan", async () => {
+    const email = `${PREFIX}${unique()}@contoh.com`;
+    const { user } = await registerUser({ email, password: "password-rahasia", name: "Budi", userAgent: null });
+    await db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, user.id));
+
+    await loginWithGoogle({ sub: `sub-${unique()}`, email }, null);
+
+    const [row] = await db.select().from(users).where(eq(users.id, user.id));
+    expect(row!.passwordHash).not.toBeNull();
+  });
+
+  test("dua login Google pertama bersamaan → tetap satu user", async () => {
+    const email = `${PREFIX}${unique()}@contoh.com`;
+    const sub = `sub-${unique()}`;
+
+    const results = await Promise.allSettled([
+      loginWithGoogle({ sub, email }, null),
+      loginWithGoogle({ sub, email }, null),
+    ]);
+
+    expect(results.some((r) => r.status === "fulfilled")).toBe(true);
+    for (const r of results) {
+      if (r.status === "rejected") expect(r.reason.code).toBe("google_login_failed");
+    }
+    expect(await db.select().from(users).where(eq(users.email, email))).toHaveLength(1);
+  });
+
+  test("email lebih dari 150 karakter → google_email_invalid", async () => {
+    const email = `${PREFIX}${"a".repeat(150)}@contoh.com`;
+    const err = await loginWithGoogle({ sub: `sub-${unique()}`, email }, null).catch((e) => e);
+    expect(err.code).toBe("google_email_invalid");
   });
 
   test("email sudah tertaut ke akun Google lain → google_account_conflict, tidak ditimpa", async () => {

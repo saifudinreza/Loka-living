@@ -155,6 +155,8 @@ export interface GoogleClaims {
  */
 export async function loginWithGoogle(claims: GoogleClaims, userAgent: string | null): Promise<{ refreshToken: string }> {
   const email = normalizeEmail(claims.email);
+  // kolom users.email varchar(150): tolak lebih awal dengan kode yang jelas, bukan error database
+  if (email.length > 150) throw new GoogleLoginError("google_email_invalid");
 
   return db.transaction(async (tx) => {
     const now = new Date();
@@ -168,9 +170,23 @@ export async function loginWithGoogle(claims: GoogleClaims, userAgent: string | 
         // email ini sudah ditautkan ke akun Google lain: jangan ditimpa
         if (byEmail.googleId && byEmail.googleId !== claims.sub) throw new GoogleLoginError("google_account_conflict");
 
+        // Email akun ini belum pernah dibuktikan pemiliknya. Bisa saja didaftarkan orang lain dengan email korban,
+        // jadi password-nya dibuang dan semua sesinya dicabut: sejak sekarang hanya pemilik Google yang bisa masuk.
+        const unverified = byEmail.emailVerifiedAt === null;
+        if (unverified) {
+          await tx
+            .update(refreshTokens)
+            .set({ revokedAt: now })
+            .where(and(eq(refreshTokens.userId, byEmail.id), isNull(refreshTokens.revokedAt)));
+        }
+
         [user] = await tx
           .update(users)
-          .set({ googleId: claims.sub, emailVerifiedAt: byEmail.emailVerifiedAt ?? now })
+          .set({
+            googleId: claims.sub,
+            emailVerifiedAt: byEmail.emailVerifiedAt ?? now,
+            ...(unverified ? { passwordHash: null } : {}),
+          })
           .where(eq(users.id, byEmail.id))
           .returning();
       } else {

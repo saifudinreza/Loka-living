@@ -14,3 +14,10 @@ export function timingSafeEqualHex(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   return timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
 }
+
+/** Perbandingan waktu-konstan untuk string biasa (bukan hex); false kalau panjang beda. */
+export function timingSafeEqualString(a: string, b: string): boolean {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  return left.length === right.length && timingSafeEqual(left, right);
+}

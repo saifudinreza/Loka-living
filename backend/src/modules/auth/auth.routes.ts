@@ -2,6 +2,7 @@ import type { Google } from "arctic";
 import { decodeIdToken, generateCodeVerifier, generateState } from "arctic";
 import { Elysia, t } from "elysia";
 import { env } from "../../config/env";
+import { timingSafeEqualString } from "../../lib/crypto";
 import { createRateLimiter } from "../../lib/rate-limit";
 import { requireAuth } from "./auth.guard";
 import {
@@ -94,7 +95,7 @@ export function authRoutes(google: Google | null = defaultGoogle) {
       clearRefreshCookie(cookie);
       set.status = 204;
     })
-    .use(googleRoutes(google))
+    .use(googleRoutes(google, limitByIp))
     .use(requireAuth)
     .get("/me", ({ user }) => ({
       user: {
@@ -116,7 +117,9 @@ const GOOGLE_COOKIE_PATH = "/api/auth/google";
 const callbackUrl = (error?: string) =>
   `${env.FRONTEND_URL}/auth/callback${error ? `?error=${error}` : ""}`;
 
-function googleRoutes(google: Google | null) {
+type LimitByIp = (ctx: { request: Request; server: { requestIP(r: Request): { address: string } | null } | null }) => void;
+
+function googleRoutes(google: Google | null, limitByIp: LimitByIp) {
   return new Elysia({ prefix: "/google" })
     .get("/", ({ cookie, redirect }) => {
       if (!google) {
@@ -139,7 +142,7 @@ function googleRoutes(google: Google | null) {
       cookie[GOOGLE_VERIFIER_COOKIE]!.set({ value: codeVerifier, ...options });
 
       return redirect(google.createAuthorizationURL(state, codeVerifier, ["openid", "profile", "email"]).toString(), 302);
-    })
+    }, { beforeHandle: limitByIp })
     .get(
       "/callback",
       async ({ query, cookie, headers, redirect }) => {
@@ -158,7 +161,7 @@ function googleRoutes(google: Google | null) {
           typeof savedState !== "string" ||
           typeof codeVerifier !== "string" ||
           !query.state ||
-          query.state !== savedState
+          !timingSafeEqualString(query.state, savedState)
         ) {
           return redirect(callbackUrl("google_state_mismatch"), 302);
         }
@@ -194,6 +197,7 @@ function googleRoutes(google: Google | null) {
         }
       },
       {
+        beforeHandle: limitByIp,
         query: t.Object({
           code: t.Optional(t.String()),
           state: t.Optional(t.String()),
