@@ -19,7 +19,7 @@ export function createApp(_options: AppOptions = {}) {
       }),
     )
     .get("/health", () => ({ status: "ok" }))
-    .group("/api", (api) => api.use(authRoutes));
+    .group("/api", (api) => api.use(authRoutes()));
 }
 
 export type App = ReturnType<typeof createApp>;
