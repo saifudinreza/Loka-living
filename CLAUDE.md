@@ -52,7 +52,6 @@ Sedang di **Fase 1 — MVP**.
 - ✅ `ProductController` — `index()` (daftar produk aktif) + `show(slug)` (detail produk + varian) + routes terdaftar
 - ✅ Webhook Midtrans handler — `PaymentWebhookController` lengkap (verifySignature → idempotency → cari order → validasi amount → map status → DB transaction: update order, upsert PaymentTransaction, OrderStatusLog, release stock, mark processed) + route terdaftar
 - **Rencana urutan rebuild:** (1-3) ✅ migration, models, seeder (**selesai**), (4) ✅ `checkout/init` + stock reservation (**selesai — user review & paham**), (5) ✅ `ReleaseExpiredReservations` (**selesai — reviewed & fixed**), (6) ✅ `checkout/shipping-rate` + `CargoRateService` (**selesai — reviewed & fixed**), (7) ✅ `checkout/confirm` + `MidtransService` (**selesai — reviewed & fixed**), (8) webhook Midtrans + signature verification (critical logic — mode belajar).
-- **Cara kerja disepakati:** Claude jelaskan + tulis kode di terminal (dengan komen penjelasan), user mengetik sendiri ke file. Jangan pakai Write/Edit langsung ke file migration/model/controller kecuali diminta.
 
 **Frontend (`frontend/src/`):**
 - ✅ **Semua data produk dari API** — tidak ada lagi hardcoded `PRODUCTS`/`VARIANTS`/`SPOTS`/`NEW_ARRIVAL_IDS`
@@ -74,7 +73,7 @@ Sedang di **Fase 1 — MVP**.
 
 ## Todo (daftar kerja — update tiap selesai)
 
-Urutan kerja: kerjakan berurutan, mode belajar untuk logic kritis.
+Urutan kerja: kerjakan berurutan.
 
 ### Batch 1: ✅ Homepage → API (selesai)
 
@@ -126,9 +125,8 @@ Meski waktu mepet, ini wajib benar sebelum MVP dianggap selesai:
 
 ## 6. Cara Kerja dengan Claude Code
 
-- User adalah developer solo, ngoding di sela kerja shift, **dan sedang mempersiapkan interview** — tujuannya bukan cuma punya aplikasi yang jalan, tapi paham logic-nya sendiri untuk bisa dijelaskan.
-- **Mode belajar untuk logic kritis** (stock reservation, webhook Midtrans/signature verification, checkout flow, perhitungan harga/ongkir, dan business logic penting lainnya): jelaskan dulu alurnya (step-by-step + pseudocode/diagram + alasan desainnya) sebelum menulis kode — biarkan user yang implementasi, lalu saya review, cari bug/edge case, dan tanya balik untuk memastikan paham (bukan cuma kode jalan).
-- **Boilerplate murni** (routing skeleton, migration scaffolding standar, styling, CRUD repetitif) boleh langsung digenerate — itu bukan yang biasanya ditanya saat interview.
+- User adalah developer solo, ngoding di sela kerja shift. User memberi perintah, **Claude yang mengimplementasikan** (tulis/edit file langsung, jalankan test/typecheck). Tidak ada mode belajar: jangan minta user mengetik kode sendiri.
+- Tetap teliti di logic kritis (stock reservation, webhook/signature verification, harga/ongkir): tulis test, cari edge case, dan jelaskan singkat keputusan desainnya di ringkasan akhir.
 - Kalau ragu suatu potongan kerja termasuk "logic kritis" atau "boilerplate", tanya dulu ke user daripada asumsi.
 - Kalau mengerjakan fitur baru, cek dulu urutan prioritas di `PLANNING-LokaLiving.md` §3 & §5 supaya tidak keluar jalur fase.
 - Update bagian **"Status Sekarang"** di file ini setiap kali menyelesaikan potongan kerja signifikan (komponen baru, halaman baru, integrasi baru) — supaya sesi berikutnya tetap akurat tanpa perlu re-scan seluruh repo.
