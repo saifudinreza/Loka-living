@@ -32,3 +32,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# Foto sumber resolusi tinggi sebelum di-crop/kompres. Versi jadi ada di
+# frontend/public/images/products/ (lihat src/db/seed.ts). Arsip lokal saja,
+# tidak perlu ikut ter-commit.
+/src/db/assets

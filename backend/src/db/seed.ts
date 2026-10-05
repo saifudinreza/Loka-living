@@ -35,9 +35,9 @@ const PRODUCTS: SeedProduct[] = [
     category: "chairs",
     description: "Rangka rotan anyaman tangan dengan bantalan linen lepas-cuci — kursi baca yang menua dengan indah.",
     lengthCm: "72", widthCm: "80", heightCm: "98", weightKg: "8",
-    gallery: [],
+    gallery: ["/images/products/kursi-santai-rukun-ruang-1.jpg"],
     variants: [
-      { sku: "KSR-RLN-01", material: "Rotan & Linen", colorHex: "#C99A66", priceIdr: 2450000, priceUsd: "153.13", compareAtPriceIdr: 2900000, stockAvailable: 13, images: placeholder(1) },
+      { sku: "KSR-RLN-01", material: "Rotan & Linen", colorHex: "#C99A66", priceIdr: 2450000, priceUsd: "153.13", compareAtPriceIdr: 2900000, stockAvailable: 13, images: ["/images/products/ksr-rln-01-1.jpg"] },
     ],
   },
   {
@@ -47,10 +47,10 @@ const PRODUCTS: SeedProduct[] = [
     category: "chairs",
     description: "Kursi makan kayu solid dengan dudukan anyaman rotan, ringan namun kokoh untuk pemakaian harian.",
     lengthCm: "46", widthCm: "52", heightCm: "84", weightKg: "6",
-    gallery: [],
+    gallery: ["/images/products/kursi-makan-tani-ruang-1.jpg"],
     variants: [
-      { sku: "KMT-JTI-01", material: "Kayu Jati", colorHex: "#9B6B3A", priceIdr: 1150000, priceUsd: "71.88", stockAvailable: 48, images: placeholder(2) },
-      { sku: "KMT-MHN-01", material: "Kayu Mahoni", colorHex: "#5A2D1A", priceIdr: 1250000, priceUsd: "78.13", stockAvailable: 24, images: placeholder(2) },
+      { sku: "KMT-JTI-01", material: "Kayu Jati", colorHex: "#9B6B3A", priceIdr: 1150000, priceUsd: "71.88", stockAvailable: 48, images: ["/images/products/kmt-jti-01-1.jpg"] },
+      { sku: "KMT-MHN-01", material: "Kayu Mahoni", colorHex: "#5A2D1A", priceIdr: 1250000, priceUsd: "78.13", stockAvailable: 24, images: ["/images/products/kmt-mhn-01-1.jpg"] },
     ],
   },
   {
@@ -60,9 +60,9 @@ const PRODUCTS: SeedProduct[] = [
     category: "tables",
     description: "Meja kopi bidang lebar dari kayu jati reklamasi, permukaan diminyaki natural tanpa lapisan kimia.",
     lengthCm: "110", widthCm: "60", heightCm: "42", weightKg: "18",
-    gallery: [],
+    gallery: ["/images/products/meja-kopi-lestari-ruang-1.jpg"],
     variants: [
-      { sku: "MKL-JTR-01", material: "Jati Reklamasi", colorHex: "#8B6B4A", priceIdr: 1850000, priceUsd: "115.63", compareAtPriceIdr: 2200000, stockAvailable: 21, images: placeholder(3) },
+      { sku: "MKL-JTR-01", material: "Jati Reklamasi", colorHex: "#8B6B4A", priceIdr: 1850000, priceUsd: "115.63", compareAtPriceIdr: 2200000, stockAvailable: 21, images: ["/images/products/mkl-jtr-01-1.jpg"] },
     ],
   },
   {
@@ -72,9 +72,9 @@ const PRODUCTS: SeedProduct[] = [
     category: "tables",
     description: "Meja makan enam kursi dari satu bilah kayu suar, urat kayu unik pada tiap unit.",
     lengthCm: "180", widthCm: "90", heightCm: "75", weightKg: "35",
-    gallery: [],
+    gallery: ["/images/products/meja-makan-bumi-ruang-1.jpg"],
     variants: [
-      { sku: "MMB-SUAR-01", material: "Kayu Suar", colorHex: "#A0784A", priceIdr: 4900000, priceUsd: "306.25", stockAvailable: 7, images: placeholder(4) },
+      { sku: "MMB-SUAR-01", material: "Kayu Suar", colorHex: "#A0784A", priceIdr: 4900000, priceUsd: "306.25", stockAvailable: 7, images: ["/images/products/mmb-suar-01-1.jpg"] },
     ],
   },
   {
@@ -84,9 +84,9 @@ const PRODUCTS: SeedProduct[] = [
     category: "cabinets",
     description: "Lemari penyimpanan tinggi dengan pintu panel rotan berventilasi dan engsel kuningan solid.",
     lengthCm: "90", widthCm: "45", heightCm: "180", weightKg: "45",
-    gallery: [],
+    gallery: ["/images/products/lemari-arsip-wana-ruang-1.jpg"],
     variants: [
-      { sku: "LAW-KRT-01", material: "Kayu & Rotan", colorHex: "#6B4226", priceIdr: 5600000, priceUsd: "350.00", compareAtPriceIdr: 6400000, stockAvailable: 5, images: placeholder(5) },
+      { sku: "LAW-KRT-01", material: "Kayu & Rotan", colorHex: "#6B4226", priceIdr: 5600000, priceUsd: "350.00", compareAtPriceIdr: 6400000, stockAvailable: 5, images: ["/images/products/law-krt-01-1.jpg"] },
     ],
   },
   {
@@ -96,10 +96,10 @@ const PRODUCTS: SeedProduct[] = [
     category: "shelves",
     description: "Rak buku modular yang bisa ditambah tingkat seiring koleksi Anda bertumbuh.",
     lengthCm: "80", widthCm: "32", heightCm: "160", weightKg: "22",
-    gallery: [],
+    gallery: ["/images/products/rak-buku-tumbuh-ruang-1.jpg"],
     variants: [
-      { sku: "RBT-JTI-01", material: "Kayu Jati", colorHex: "#9B6B3A", priceIdr: 2100000, priceUsd: "131.25", stockAvailable: 34, images: placeholder(6) },
-      { sku: "RBT-WLN-01", material: "Kayu Walnut", colorHex: "#5A3D2B", priceIdr: 2400000, priceUsd: "150.00", stockAvailable: 18, images: placeholder(6) },
+      { sku: "RBT-JTI-01", material: "Kayu Jati", colorHex: "#9B6B3A", priceIdr: 2100000, priceUsd: "131.25", stockAvailable: 34, images: ["/images/products/rbt-jti-01-1.jpg"] },
+      { sku: "RBT-WLN-01", material: "Kayu Walnut", colorHex: "#5A3D2B", priceIdr: 2400000, priceUsd: "150.00", stockAvailable: 18, images: ["/images/products/rbt-wln-01-1.jpg"] },
     ],
   },
   {
@@ -109,9 +109,9 @@ const PRODUCTS: SeedProduct[] = [
     category: "chairs",
     description: "Bangku lorong ramping dari kayu mahoni, sempurna untuk area masuk atau ujung tempat tidur.",
     lengthCm: "140", widthCm: "38", heightCm: "45", weightKg: "12",
-    gallery: [],
+    gallery: ["/images/products/bangku-panjang-sela-ruang-1.jpg"],
     variants: [
-      { sku: "BPS-MHN-01", material: "Kayu Mahoni", colorHex: "#5A2D1A", priceIdr: 1680000, priceUsd: "105.00", stockAvailable: 19, images: placeholder(7) },
+      { sku: "BPS-MHN-01", material: "Kayu Mahoni", colorHex: "#5A2D1A", priceIdr: 1680000, priceUsd: "105.00", stockAvailable: 19, images: ["/images/products/bps-mhn-01-1.jpg"] },
     ],
   },
   {
@@ -121,9 +121,9 @@ const PRODUCTS: SeedProduct[] = [
     category: "tables",
     description: "Meja samping mungil dengan laci tersembunyi, pas untuk lampu baca dan barang kecil.",
     lengthCm: "40", widthCm: "40", heightCm: "55", weightKg: "8",
-    gallery: [],
+    gallery: ["/images/products/meja-samping-endap-ruang-1.jpg"],
     variants: [
-      { sku: "MSE-KEK-01", material: "Kayu Ek", colorHex: "#C4A882", priceIdr: 890000, priceUsd: "55.63", compareAtPriceIdr: 1050000, stockAvailable: 52, images: placeholder(8) },
+      { sku: "MSE-KEK-01", material: "Kayu Ek", colorHex: "#C4A882", priceIdr: 890000, priceUsd: "55.63", compareAtPriceIdr: 1050000, stockAvailable: 52, images: ["/images/products/mse-kek-01-1.jpg"] },
     ],
   },
 ];
