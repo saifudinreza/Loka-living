@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { getProductBySlug, listProducts, listRooms } from "./catalog.service";
+import { getProductBySlug, listProducts, listRooms, listTestimonials } from "./catalog.service";
 
 // Katalog publik dan jarang berubah: cache di browser/CDN mengurangi beban database tanpa Redis.
 const cache = (set: { headers: Record<string, string | number | undefined> }, seconds: number) => {
@@ -37,4 +37,18 @@ export const catalogRoutes = new Elysia()
     const data = await getProductBySlug(params.slug);
     cache(set, 60);
     return { data };
-  });
+  })
+  .get(
+    "/testimonials",
+    async ({ query, set }) => {
+      const data = await listTestimonials({ productSlug: query.product_slug, limit: query.limit ?? 6 });
+      cache(set, 300);
+      return { data };
+    },
+    {
+      query: t.Object({
+        product_slug: t.Optional(t.String({ maxLength: 160 })),
+        limit: t.Optional(t.Numeric({ minimum: 1, maximum: 20 })),
+      }),
+    },
+  );
