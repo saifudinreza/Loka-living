@@ -1,25 +1,11 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
 import ImageSlot from "./ImageSlot";
 import { Reveal, RevealLines } from "./Reveal";
 import { Parallax } from "./Parallax";
 import { Magnetic } from "./Magnetic";
-import { formatPrice } from "@/lib/products";
-import type { Product } from "@/lib/products";
-import { usePdpStore } from "@/lib/pdpStore";
 
-export default function Hero({ products }: { products: Product[] }) {
-  const [hovered, setHovered] = useState<number | null>(null);
-  const openPdp = usePdpStore((s) => s.open);
-
-  const SPOTS = [
-    { top: "62%", left: "19%", slug: "kursi-santai-rukun" },
-    { top: "40%", left: "55%", slug: "meja-kopi-lestari" },
-    { top: "68%", left: "81%", slug: "bangku-panjang-sela" },
-  ];
-
+export default function Hero() {
   return (
     <>
       <header id="top" className="px-[5vw] pt-[158px]">
@@ -55,40 +41,15 @@ export default function Hero({ products }: { products: Product[] }) {
           className="relative w-full overflow-hidden rounded-2xl bg-card"
           style={{ aspectRatio: "16/8.5" }}
         >
-          <Parallax className="absolute inset-0" strength={28}>
-            <ImageSlot label="Foto ruang / hero furniture" src="/images/lk-hero.svg" />
+          {/* Lapisan parallax dibuat 32px lebih tinggi di atas dan bawah (container overflow-hidden)
+              supaya geseran ±28px tidak membuka celah kosong di tepi foto. */}
+          <Parallax className="absolute inset-x-0 -inset-y-8" strength={28}>
+            <ImageSlot
+              label="Meja makan kayu suar dengan kursi rotan di ruang makan"
+              src="/images/products/meja-makan-bumi-ruang-1.jpg"
+              objectPosition="50% 55%"
+            />
           </Parallax>
-          {SPOTS.map((s, i) => {
-            const p = products.find((x) => x.slug === s.slug);
-            if (!p) return null;
-            return (
-              <div
-                key={s.slug}
-                onClick={() => openPdp(p.id)}
-                onMouseEnter={() => setHovered(i)}
-                onMouseLeave={() => setHovered(null)}
-                className="absolute z-[3] -translate-x-1/2 -translate-y-1/2 cursor-pointer"
-                style={{ top: s.top, left: s.left }}
-              >
-                <span className="relative block h-[26px] w-[26px] rounded-full bg-[rgba(246,241,232,0.65)]">
-                  <span className="absolute inset-[9px] rounded-full bg-olive" />
-                </span>
-                <AnimatePresence>
-                  {hovered === i && (
-                    <motion.span
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 6 }}
-                      transition={{ duration: 0.25, ease: "easeOut" }}
-                      className="pointer-events-none absolute bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink px-[15px] py-[9px] text-xs font-medium text-bg"
-                    >
-                      {p.name} · {formatPrice(p.price)}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
         </Reveal>
         <Reveal className="mt-[22px] flex flex-wrap items-center justify-between gap-4">
           <Magnetic className="inline-block">

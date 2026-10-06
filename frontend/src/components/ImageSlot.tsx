@@ -2,9 +2,11 @@ interface ImageSlotProps {
   label: string;
   src?: string;
   className?: string;
+  /** CSS object-position untuk foto yang rasionya beda dari bingkai, mis. "50% 55%". */
+  objectPosition?: string;
 }
 
-export default function ImageSlot({ label, src, className = "" }: ImageSlotProps) {
+export default function ImageSlot({ label, src, className = "", objectPosition }: ImageSlotProps) {
   if (src) {
     return (
       <div className={`relative h-full w-full overflow-hidden bg-card ${className}`}>
@@ -13,6 +15,7 @@ export default function ImageSlot({ label, src, className = "" }: ImageSlotProps
           src={src}
           alt={label}
           className="h-full w-full object-cover"
+          style={objectPosition ? { objectPosition } : undefined}
         />
       </div>
     );

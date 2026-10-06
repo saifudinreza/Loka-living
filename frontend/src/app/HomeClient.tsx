@@ -21,7 +21,7 @@ export default function HomeClient({ products }: { products: Product[] }) {
     <div className="min-h-screen overflow-x-hidden bg-bg">
       <ScrollProgress />
       <Navbar />
-      <Hero products={products} />
+      <Hero />
       <Marquee />
       <Koleksi products={products} />
       <BaruTiba products={products} newArrivalSlugs={newArrivalSlugs} />
