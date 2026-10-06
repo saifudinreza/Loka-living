@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/client";
-import { productRooms, productVariants, products, rooms } from "../../db/schema";
+import { productRooms, productVariants, products, rooms, testimonials } from "../../db/schema";
 import { AppError } from "../../lib/errors";
 
 export interface ProductFilters {
@@ -127,5 +127,46 @@ export async function listRooms() {
     description: r.description,
     image_url: r.imageUrl,
     product_count: r.productCount,
+  }));
+}
+
+export interface TestimonialFilters {
+  productSlug?: string;
+  limit: number;
+}
+
+export async function listTestimonials(filters: TestimonialFilters) {
+  const conditions = [eq(testimonials.isPublished, true)];
+  // join produk hanya yang aktif: testimoni produk non-aktif tetap tampil, tapi `product` bernilai null;
+  // dan filter slug produk non-aktif/tak ada otomatis menghasilkan daftar kosong
+  if (filters.productSlug) conditions.push(eq(products.slug, filters.productSlug));
+
+  const rows = await db
+    .select({
+      id: testimonials.id,
+      customerName: testimonials.customerName,
+      city: testimonials.city,
+      quote: testimonials.quote,
+      rating: testimonials.rating,
+      photoUrl: testimonials.photoUrl,
+      productSlug: products.slug,
+      productName: products.name,
+    })
+    .from(testimonials)
+    .leftJoin(products, and(eq(products.id, testimonials.productId), eq(products.status, "active")))
+    .where(and(...conditions))
+    // id sebagai pemutus seri agar urutan stabil
+    .orderBy(asc(testimonials.sortOrder), desc(testimonials.createdAt), asc(testimonials.id))
+    .limit(filters.limit);
+
+  // is_published dan sort_order sengaja tidak dikirim
+  return rows.map((r) => ({
+    id: r.id,
+    customer_name: r.customerName,
+    city: r.city,
+    quote: r.quote,
+    rating: r.rating,
+    photo_url: r.photoUrl,
+    product: r.productSlug && r.productName ? { slug: r.productSlug, name: r.productName } : null,
   }));
 }
