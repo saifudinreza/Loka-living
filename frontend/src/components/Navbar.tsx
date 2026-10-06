@@ -1,13 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCartStore } from "@/lib/cartStore";
 
+// Navbar dipakai di semua halaman, jadi link bagian beranda diawali "/" (bukan "#...").
+// "#baru" saja hanya berfungsi di beranda; "/#baru" berfungsi dari halaman mana pun.
 const LINKS = [
   { href: "/collections", label: "Koleksi" },
-  { href: "#baru", label: "Baru Tiba" },
-  { href: "#sorotan", label: "Sorotan" },
+  { href: "/#baru", label: "Baru Tiba" },
+  { href: "/#sorotan", label: "Sorotan" },
   { href: "/about", label: "Tentang" },
   { href: "/contact", label: "Kontak" },
 ];
@@ -35,17 +38,18 @@ export default function Navbar() {
       className="fixed left-0 top-0 z-[100] flex w-full items-center justify-between border-b px-[5vw]"
       style={{ backdropFilter: scrolled ? "blur(12px)" : "none" }}
     >
-      <a
-        href="#top"
+      {/* Logo = kembali ke beranda dari halaman mana pun */}
+      <Link
+        href="/"
         className="disp text-xl font-medium tracking-[-0.02em] text-ink"
       >
         loka living<span className="text-olive">.</span>
-      </a>
+      </Link>
       <div className="hidden gap-9 text-sm sm:flex">
         {LINKS.map((l) => (
-          <a key={l.href} href={l.href}>
+          <Link key={l.href} href={l.href}>
             {l.label}
-          </a>
+          </Link>
         ))}
       </div>
       <motion.button
