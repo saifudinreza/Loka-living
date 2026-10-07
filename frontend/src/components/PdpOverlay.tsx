@@ -7,16 +7,14 @@ import ImageSlot from "./ImageSlot";
 import { formatPrice } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import { usePdpStore } from "@/lib/pdpStore";
-import { useCartStore } from "@/lib/cartStore";
-import { useToastStore } from "@/lib/toastStore";
+import { useAddToCart } from "@/lib/useAddToCart";
 
 const EASE = [0.19, 1, 0.22, 1] as const;
 
 export default function PdpOverlay({ products }: { products: Product[] }) {
   const openId = usePdpStore((s) => s.openId);
   const close = usePdpStore((s) => s.close);
-  const addItem = useCartStore((s) => s.addItem);
-  const showToast = useToastStore((s) => s.show);
+  const addToCart = useAddToCart();
   const router = useRouter();
   const [mat, setMat] = useState(0);
   const dragControls = useDragControls();
@@ -200,8 +198,7 @@ export default function PdpOverlay({ products }: { products: Product[] }) {
                   </motion.button>
                   <motion.button
                     onClick={() => {
-                      addItem(product.variants[mat]?.id ?? "");
-                      showToast("Ditambahkan ke keranjang");
+                      void addToCart(product.variants[mat]?.id);
                     }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}

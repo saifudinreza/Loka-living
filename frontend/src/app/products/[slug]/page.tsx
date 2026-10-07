@@ -12,14 +12,12 @@ import { Reveal } from "@/components/Reveal";
 import { formatPrice } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import { fetchProductBySlug, mapApiProduct } from "@/lib/api";
-import { useCartStore } from "@/lib/cartStore";
-import { useToastStore } from "@/lib/toastStore";
+import { useAddToCart } from "@/lib/useAddToCart";
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
-  const addItem = useCartStore((s) => s.addItem);
-  const showToast = useToastStore((s) => s.show);
+  const addToCart = useAddToCart();
   const [mat, setMat] = useState(0);
   const [product, setProduct] = useState<Product | null>(null);
 
@@ -182,8 +180,7 @@ export default function ProductDetailPage() {
               </motion.button>
               <motion.button
                 onClick={() => {
-                  addItem(product.variants[mat]?.id ?? "");
-                  showToast("Ditambahkan ke keranjang");
+                  void addToCart(product.variants[mat]?.id);
                 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}

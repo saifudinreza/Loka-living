@@ -9,14 +9,12 @@ import { Magnetic } from "./Magnetic";
 import ImageSlot from "./ImageSlot";
 import { formatPrice } from "@/lib/products";
 import type { Product } from "@/lib/products";
-import { useCartStore } from "@/lib/cartStore";
-import { useToastStore } from "@/lib/toastStore";
+import { useAddToCart } from "@/lib/useAddToCart";
 
 export default function Sorotan({ products, featuredSlug }: { products: Product[]; featuredSlug: string }) {
   const [variant, setVariant] = useState(0);
   const highlight = products.find((p) => p.slug === featuredSlug);
-  const addItem = useCartStore((s) => s.addItem);
-  const showToast = useToastStore((s) => s.show);
+  const addToCart = useAddToCart();
   const router = useRouter();
 
   if (!highlight) return null;
@@ -124,8 +122,7 @@ export default function Sorotan({ products, featuredSlug }: { products: Product[
             </Magnetic>
             <button
               onClick={() => {
-                addItem(highlight.variants[variant]?.id ?? "");
-                showToast("Ditambahkan ke keranjang");
+                void addToCart(highlight.variants[variant]?.id);
               }}
               className="rounded-full border border-ink px-8 py-4 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink transition-colors hover:bg-ink hover:text-bg"
             >

@@ -6,13 +6,11 @@ import ImageSlot from "./ImageSlot";
 import { formatPrice } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import { usePdpStore } from "@/lib/pdpStore";
-import { useCartStore } from "@/lib/cartStore";
-import { useToastStore } from "@/lib/toastStore";
+import { useAddToCart } from "@/lib/useAddToCart";
 
 export default function BaruTiba({ products, newArrivalSlugs }: { products: Product[]; newArrivalSlugs: string[] }) {
   const openPdp = usePdpStore((s) => s.open);
-  const addItem = useCartStore((s) => s.addItem);
-  const showToast = useToastStore((s) => s.show);
+  const addToCart = useAddToCart();
   const items = newArrivalSlugs.map((slug) => products.find((p) => p.slug === slug)!).filter(Boolean);
 
   return (
@@ -60,8 +58,7 @@ export default function BaruTiba({ products, newArrivalSlugs }: { products: Prod
             <motion.button
               onClick={(e) => {
                 e.stopPropagation();
-                addItem(item.variants[0]?.id ?? "");
-                showToast("Ditambahkan ke keranjang");
+                void addToCart(item.variants[0]?.id);
               }}
               whileHover={{ scale: 1.1, rotate: 90 }}
               whileTap={{ scale: 0.9 }}

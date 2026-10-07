@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import { MotionConfig } from "motion/react";
+import AuthProvider from "@/components/AuthProvider";
 import "./globals.css";
 
 const displayFont = Bricolage_Grotesque({
@@ -29,7 +30,9 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className={`${displayFont.variable} ${bodyFont.variable} antialiased`}>
-        <MotionConfig reducedMotion="user">{children}</MotionConfig>
+        <MotionConfig reducedMotion="user">
+          <AuthProvider>{children}</AuthProvider>
+        </MotionConfig>
       </body>
     </html>
   );
