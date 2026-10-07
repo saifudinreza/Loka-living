@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Reveal, RevealGroup, RevealItem } from "./Reveal";
+import { RevealGroup, RevealItem } from "./Reveal";
+import { ScrollReveal } from "./ScrollReveal";
 import ImageSlot from "./ImageSlot";
 import { formatPrice } from "@/lib/products";
 import type { Product } from "@/lib/products";
@@ -15,7 +16,7 @@ export default function BaruTiba({ products, newArrivalSlugs }: { products: Prod
 
   return (
     <section id="baru" className="px-[5vw] pt-[130px]">
-      <Reveal className="flex flex-wrap items-center justify-between gap-8">
+      <ScrollReveal preset="fade-rotate" className="flex flex-wrap items-center justify-between gap-8">
         <h2
           className="disp"
           style={{ fontSize: "clamp(40px,7vw,104px)", lineHeight: 0.88, letterSpacing: "-0.04em" }}
@@ -29,7 +30,7 @@ export default function BaruTiba({ products, newArrivalSlugs }: { products: Prod
         <p className="max-w-[250px] text-sm leading-[1.55] text-soft">
           Perabot yang menghormati gaya sekaligus lingkungan Anda.
         </p>
-      </Reveal>
+      </ScrollReveal>
 
       <RevealGroup className="mt-[52px] grid grid-cols-1 gap-3.5 sm:grid-cols-3">
         {items.map((item) => (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Reveal } from "./Reveal";
+import { ScrollReveal } from "./ScrollReveal";
 import ProductCard from "./ProductCard";
 import { FILTERS } from "@/lib/products";
 import type { Product } from "@/lib/products";
@@ -16,7 +17,7 @@ export default function Koleksi({ products }: { products: Product[] }) {
   return (
     <section id="koleksi" className="px-[5vw] pt-[130px]">
       <div className="grid items-center gap-8" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))" }}>
-        <Reveal className="flex flex-col gap-3.5">
+        <ScrollReveal preset="slide-left" className="flex flex-col gap-3.5">
           <p className="max-w-[280px] text-sm leading-[1.55] text-soft">
             Perabot yang menghormati gaya sekaligus lingkungan Anda.
           </p>
@@ -24,8 +25,8 @@ export default function Koleksi({ products }: { products: Product[] }) {
             <span className="absolute -top-[3px] left-0 h-1.5 w-1.5 rounded-full bg-wood" />
             <span className="absolute -top-[3px] right-0 h-1.5 w-1.5 rounded-full bg-wood" />
           </div>
-        </Reveal>
-        <Reveal className="justify-self-end text-right">
+        </ScrollReveal>
+        <ScrollReveal preset="slide-right" className="justify-self-end text-right">
           <h2
             className="disp"
             style={{
@@ -42,7 +43,7 @@ export default function Koleksi({ products }: { products: Product[] }) {
           >
             Lihat Semua →
           </a>
-        </Reveal>
+        </ScrollReveal>
       </div>
 
       <Reveal className="mt-[52px] flex flex-wrap justify-center gap-2.5">

@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Reveal } from "./Reveal";
-import { Parallax } from "./Parallax";
-import { Magnetic } from "./Magnetic";
+import { Button3D } from "./Button3D";
+import { ScrollReveal, ParallaxDepth } from "./ScrollReveal";
 import ImageSlot from "./ImageSlot";
 import { formatPrice } from "@/lib/products";
 import type { Product } from "@/lib/products";
@@ -21,7 +20,7 @@ export default function Sorotan({ products, featuredSlug }: { products: Product[
 
   return (
     <section id="sorotan" className="px-[5vw] pt-[130px]">
-      <Reveal className="mb-11 text-center">
+      <ScrollReveal preset="fade-scale" className="mb-11 text-center">
         <div
           className="disp text-soft"
           style={{ fontSize: "clamp(18px,2.4vw,26px)" }}
@@ -34,14 +33,15 @@ export default function Sorotan({ products, featuredSlug }: { products: Product[
         >
           Set Furnitur Kasaya
         </h2>
-      </Reveal>
+      </ScrollReveal>
 
       <div className="grid items-center gap-11" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))" }}>
-        <Reveal
+        <ScrollReveal
+          preset="zoom-blur"
           className="relative w-full overflow-hidden rounded-2xl bg-card"
           style={{ aspectRatio: "4/5" }}
         >
-          <Parallax className="absolute inset-0" strength={26}>
+          <ParallaxDepth className="absolute inset-0" strength={30} depth={0}>
             <AnimatePresence mode="sync">
               <motion.div
                 key={variant}
@@ -57,13 +57,13 @@ export default function Sorotan({ products, featuredSlug }: { products: Product[
                 />
               </motion.div>
             </AnimatePresence>
-          </Parallax>
+          </ParallaxDepth>
           <span className="absolute left-[18px] top-[18px] rounded-full bg-[rgba(246,241,232,0.86)] px-3.5 py-[7px] text-[10px] font-semibold uppercase tracking-[0.1em] text-ink">
             Sorotan Produk
           </span>
-        </Reveal>
+        </ScrollReveal>
 
-        <Reveal>
+        <ScrollReveal preset="slide-right">
           <div className="flex items-center gap-3.5 text-[13px] text-soft">
             <span className="text-wood">★★★★★</span> 4.9
             <span className="h-1 w-1 rounded-full bg-line" /> 167 terjual
@@ -110,26 +110,24 @@ export default function Sorotan({ products, featuredSlug }: { products: Product[
             </div>
           </div>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Magnetic className="inline-block">
-              <button
-                onClick={() =>
-                  router.push(`/checkout?vid=${highlight.variants[variant]?.id}&qty=1`)
-                }
-                className="rounded-full bg-olive px-8 py-4 text-[13px] font-semibold uppercase tracking-[0.06em] text-bg transition-colors hover:bg-olive-d"
-              >
-                Beli Langsung
-              </button>
-            </Magnetic>
-            <button
+            <Button3D
+              variant="primary"
+              onClick={() =>
+                router.push(`/checkout?vid=${highlight.variants[variant]?.id}&qty=1`)
+              }
+            >
+              Beli Langsung
+            </Button3D>
+            <Button3D
+              variant="outline"
               onClick={() => {
                 void addToCart(highlight.variants[variant]?.id);
               }}
-              className="rounded-full border border-ink px-8 py-4 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink transition-colors hover:bg-ink hover:text-bg"
             >
               Tambah ke Keranjang
-            </button>
+            </Button3D>
           </div>
-        </Reveal>
+        </ScrollReveal>
       </div>
     </section>
   );
