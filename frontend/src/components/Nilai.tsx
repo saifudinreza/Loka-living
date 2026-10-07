@@ -1,7 +1,7 @@
 "use client";
 
-import { Reveal, RevealGroup, RevealItem } from "./Reveal";
-import { Parallax } from "./Parallax";
+import { RevealGroup, RevealItem } from "./Reveal";
+import { ScrollReveal, ParallaxDepth } from "./ScrollReveal";
 import ImageSlot from "./ImageSlot";
 
 const POINTS = [
@@ -20,7 +20,7 @@ const IMAGES = [
 export default function Nilai() {
   return (
     <section id="nilai" className="px-[5vw] pt-[140px] text-center">
-      <Reveal>
+      <ScrollReveal preset="fade-scale">
         <div className="disp text-soft" style={{ fontSize: "clamp(18px,2.4vw,28px)" }}>
           Perabot Bernilai
         </div>
@@ -30,7 +30,7 @@ export default function Nilai() {
         >
           Dirancang dengan Tujuan
         </h2>
-      </Reveal>
+      </ScrollReveal>
 
       <RevealGroup className="mx-auto mt-14 grid max-w-[960px] grid-cols-1 gap-8 sm:grid-cols-3">
         {POINTS.map((p) => (
@@ -41,33 +41,36 @@ export default function Nilai() {
         ))}
       </RevealGroup>
 
+      {/* Grid gambar dengan ParallaxDepth — tiap gambar bergerak di kecepatan berbeda
+          menciptakan ilusi kedalaman 3D saat scroll */}
       <RevealGroup
         className="mx-auto mt-[60px] grid max-w-[1000px] items-center gap-[18px]"
         style={{ gridTemplateColumns: "1.15fr .82fr 1.15fr" }}
       >
         <RevealItem className="overflow-hidden rounded-xl bg-card" style={{ aspectRatio: "1/1" }}>
-          <Parallax className="h-full w-full" strength={22}>
+          <ParallaxDepth className="h-full w-full" strength={30} depth={0}>
             <ImageSlot label={IMAGES[0].label} src={IMAGES[0].src} />
-          </Parallax>
+          </ParallaxDepth>
         </RevealItem>
         <div className="flex flex-col gap-[18px]">
           <RevealItem className="overflow-hidden rounded-xl bg-card" style={{ aspectRatio: "1/1" }}>
-            <Parallax className="h-full w-full" strength={-32}>
+            <ParallaxDepth className="h-full w-full" strength={40} depth={0.5}>
               <ImageSlot label={IMAGES[1].label} src={IMAGES[1].src} />
-            </Parallax>
+            </ParallaxDepth>
           </RevealItem>
           <RevealItem className="overflow-hidden rounded-xl bg-card" style={{ aspectRatio: "1/1" }}>
-            <Parallax className="h-full w-full" strength={-32}>
+            <ParallaxDepth className="h-full w-full" strength={40} depth={0.5}>
               <ImageSlot label={IMAGES[2].label} src={IMAGES[2].src} />
-            </Parallax>
+            </ParallaxDepth>
           </RevealItem>
         </div>
         <RevealItem className="overflow-hidden rounded-xl bg-card" style={{ aspectRatio: "1/1" }}>
-          <Parallax className="h-full w-full" strength={22}>
+          <ParallaxDepth className="h-full w-full" strength={30} depth={0.2}>
             <ImageSlot label={IMAGES[3].label} src={IMAGES[3].src} />
-          </Parallax>
+          </ParallaxDepth>
         </RevealItem>
       </RevealGroup>
     </section>
   );
 }
+
