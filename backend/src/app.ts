@@ -4,6 +4,7 @@ import { env } from "./config/env";
 import { docsRoutes } from "./docs/docs.routes";
 import { errorHandler } from "./lib/errors";
 import { cartRoutes } from "./modules/account/cart.routes";
+import { wishlistRoutes } from "./modules/account/wishlist.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { catalogRoutes } from "./modules/catalog/catalog.routes";
 import { shippingRoutes } from "./modules/shipping/shipping.routes";
@@ -23,7 +24,7 @@ export function createApp(_options: AppOptions = {}) {
       }),
     )
     .get("/health", () => ({ status: "ok" }))
-    .group("/api", (api) => api.use(authRoutes()).use(catalogRoutes).use(shippingRoutes).use(cartRoutes));
+    .group("/api", (api) => api.use(authRoutes()).use(catalogRoutes).use(shippingRoutes).use(cartRoutes).use(wishlistRoutes));
 
   // Swagger + diagram alur hanya untuk development; di production peta API tidak dibuka.
   if (process.env.NODE_ENV !== "production") app.use(docsRoutes);
