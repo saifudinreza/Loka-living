@@ -1,9 +1,9 @@
 "use client";
 
 import ImageSlot from "./ImageSlot";
-import { Reveal, RevealLines } from "./Reveal";
-import { Parallax } from "./Parallax";
-import { Magnetic } from "./Magnetic";
+import { RevealLines } from "./Reveal";
+import { Button3D } from "./Button3D";
+import { ScrollReveal, ParallaxDepth } from "./ScrollReveal";
 
 export default function Hero() {
   return (
@@ -37,32 +37,34 @@ export default function Hero() {
       </header>
 
       <section className="px-[5vw] pt-10">
-        <Reveal
-          className="relative w-full overflow-hidden rounded-2xl bg-card"
-          style={{ aspectRatio: "16/8.5" }}
+        <ScrollReveal
+          preset="zoom-blur"
+          // Fotonya potret (4:5). Bingkai lebar 16:8,5 hanya menampilkan ~42% tinggi foto. Rasio dibuat bertingkat:
+          // ponsel 4:5 (foto utuh), tablet 4:3 (~60%), laptop 3:2 (~53%), layar lebar 16:10 (~50%, agar tidak
+          // lebih tinggi dari layar).
+          className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-card md:aspect-[4/3] lg:aspect-[3/2] 2xl:aspect-[16/10]"
         >
-          {/* Lapisan parallax dibuat 32px lebih tinggi di atas dan bawah (container overflow-hidden)
-              supaya geseran ±28px tidak membuka celah kosong di tepi foto. */}
-          <Parallax className="absolute inset-x-0 -inset-y-8" strength={28}>
+          {/* ParallaxDepth menggeser foto ±strength px saat scroll. Lapisannya HARUS lebih besar dari bingkai minimal
+              sebesar strength (-inset-y-10 = 40px >= 35), kalau tidak tepi bingkai terbuka dan celah kosong terlihat. */}
+          <ParallaxDepth className="absolute inset-x-0 -inset-y-10" strength={35} depth={0}>
             <ImageSlot
               label="Meja makan kayu suar dengan kursi rotan di ruang makan"
               src="/images/products/meja-makan-bumi-ruang-1.jpg"
               objectPosition="50% 55%"
             />
-          </Parallax>
-        </Reveal>
-        <Reveal className="mt-[22px] flex flex-wrap items-center justify-between gap-4">
-          <Magnetic className="inline-block">
-            <a
-              href="#koleksi"
-              className="inline-flex items-center gap-3 rounded-full bg-olive py-[15px] pl-7 pr-[15px] text-[13px] font-semibold uppercase tracking-[0.08em] text-bg transition-colors hover:bg-olive-d"
-            >
+          </ParallaxDepth>
+        </ScrollReveal>
+        <ScrollReveal preset="fade-up" className="mt-[22px] flex flex-wrap items-center justify-between gap-4">
+          <Button3D variant="primary" onClick={() => {
+            document.getElementById("koleksi")?.scrollIntoView({ behavior: "smooth" });
+          }}>
+            <span className="inline-flex items-center gap-3">
               Belanja Sekarang
               <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[rgba(246,241,232,0.5)] text-[11px]">
                 →
               </span>
-            </a>
-          </Magnetic>
+            </span>
+          </Button3D>
           <div className="flex flex-wrap gap-3">
             <a
               href="#sorotan"
@@ -77,8 +79,9 @@ export default function Hero() {
               Furnitur Pilihan
             </a>
           </div>
-        </Reveal>
+        </ScrollReveal>
       </section>
     </>
   );
 }
+

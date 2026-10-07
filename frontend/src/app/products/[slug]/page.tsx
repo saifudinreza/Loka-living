@@ -9,17 +9,16 @@ import ImageSlot from "@/components/ImageSlot";
 import Toast from "@/components/Toast";
 import ScrollProgress from "@/components/ScrollProgress";
 import { Reveal } from "@/components/Reveal";
+import { Button3D } from "@/components/Button3D";
 import { formatPrice } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import { fetchProductBySlug, mapApiProduct } from "@/lib/api";
-import { useCartStore } from "@/lib/cartStore";
-import { useToastStore } from "@/lib/toastStore";
+import { useAddToCart } from "@/lib/useAddToCart";
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
-  const addItem = useCartStore((s) => s.addItem);
-  const showToast = useToastStore((s) => s.show);
+  const addToCart = useAddToCart();
   const [mat, setMat] = useState(0);
   const [product, setProduct] = useState<Product | null>(null);
 
@@ -169,29 +168,23 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <motion.button
+              <Button3D
+                variant="primary"
                 onClick={() =>
                   router.push(`/checkout?vid=${product.variants[mat]?.id}&qty=1`)
                 }
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                className="min-w-[180px] flex-1 rounded-full bg-olive px-[30px] py-[17px] text-[13px] font-semibold uppercase tracking-[0.06em] text-bg transition-colors hover:bg-olive-d"
+                className="min-w-[180px] flex-1"
               >
                 Beli Langsung
-              </motion.button>
-              <motion.button
+              </Button3D>
+              <Button3D
+                variant="outline"
                 onClick={() => {
-                  addItem(product.variants[mat]?.id ?? "");
-                  showToast("Ditambahkan ke keranjang");
+                  void addToCart(product.variants[mat]?.id);
                 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                className="rounded-full border border-ink px-7 py-[17px] text-[13px] font-semibold uppercase tracking-[0.06em] text-ink transition-colors hover:bg-ink hover:text-bg"
               >
                 Keranjang
-              </motion.button>
+              </Button3D>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-5 text-[12.5px] text-soft">

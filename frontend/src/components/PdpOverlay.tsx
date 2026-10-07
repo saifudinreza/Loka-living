@@ -4,19 +4,18 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useDragControls, type PanInfo } from "motion/react";
 import ImageSlot from "./ImageSlot";
+import { Button3D } from "./Button3D";
 import { formatPrice } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import { usePdpStore } from "@/lib/pdpStore";
-import { useCartStore } from "@/lib/cartStore";
-import { useToastStore } from "@/lib/toastStore";
+import { useAddToCart } from "@/lib/useAddToCart";
 
 const EASE = [0.19, 1, 0.22, 1] as const;
 
 export default function PdpOverlay({ products }: { products: Product[] }) {
   const openId = usePdpStore((s) => s.openId);
   const close = usePdpStore((s) => s.close);
-  const addItem = useCartStore((s) => s.addItem);
-  const showToast = useToastStore((s) => s.show);
+  const addToCart = useAddToCart();
   const router = useRouter();
   const [mat, setMat] = useState(0);
   const dragControls = useDragControls();
@@ -187,29 +186,23 @@ export default function PdpOverlay({ products }: { products: Product[] }) {
                 </div>
 
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <motion.button
+                  <Button3D
+                    variant="primary"
                     onClick={() =>
                       router.push(`/checkout?vid=${product.variants[mat]?.id}&qty=1`)
                     }
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                    className="min-w-[180px] flex-1 rounded-full bg-olive px-[30px] py-[17px] text-[13px] font-semibold uppercase tracking-[0.06em] text-bg transition-colors hover:bg-olive-d"
+                    className="min-w-[180px] flex-1"
                   >
                     Beli Langsung
-                  </motion.button>
-                  <motion.button
+                  </Button3D>
+                  <Button3D
+                    variant="outline"
                     onClick={() => {
-                      addItem(product.variants[mat]?.id ?? "");
-                      showToast("Ditambahkan ke keranjang");
+                      void addToCart(product.variants[mat]?.id);
                     }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                    className="rounded-full border border-ink px-7 py-[17px] text-[13px] font-semibold uppercase tracking-[0.06em] text-ink transition-colors hover:bg-ink hover:text-bg"
                   >
                     Keranjang
-                  </motion.button>
+                  </Button3D>
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-5 text-[12.5px] text-soft">

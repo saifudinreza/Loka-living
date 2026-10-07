@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { logout } from "@/lib/authApi";
+import { useAuthStore } from "@/lib/authStore";
 import { useCartStore } from "@/lib/cartStore";
+import { useToastStore } from "@/lib/toastStore";
 
 // Navbar dipakai di semua halaman, jadi link bagian beranda diawali "/" (bukan "#...").
 // "#baru" saja hanya berfungsi di beranda; "/#baru" berfungsi dari halaman mana pun.
@@ -15,9 +19,16 @@ const LINKS = [
   { href: "/contact", label: "Kontak" },
 ];
 
+const MotionLink = motion.create(Link);
+
 export default function Navbar() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const count = useCartStore((s) => s.lines.reduce((sum, l) => sum + l.qty, 0));
+  const status = useAuthStore((s) => s.status);
+  const user = useAuthStore((s) => s.user);
+  const count = useCartStore((s) => s.cart?.item_count ?? 0);
+  const showToast = useToastStore((s) => s.show);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -25,6 +36,16 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Keranjang hanya untuk user login: tamu langsung diarahkan ke login (lalu kembali ke /cart).
+  // Saat status masih "unknown" (sesi sedang dipulihkan) tujuannya /cart; halaman itu sendiri yang menjaga.
+  const cartHref = status === "guest" ? "/login?next=%2Fcart" : "/cart";
+
+  const handleLogout = async () => {
+    await logout();
+    showToast("Anda sudah keluar");
+    if (pathname === "/cart") router.replace("/");
+  };
 
   return (
     <motion.nav
@@ -52,28 +73,46 @@ export default function Navbar() {
           </Link>
         ))}
       </div>
-      <motion.button
-        whileHover={{ y: -2 }}
-        whileTap={{ scale: 0.95 }}
-        transition={{ type: "spring", stiffness: 400, damping: 22 }}
-        className="flex items-center gap-2.5 rounded-full border border-line py-2 pl-[18px] pr-2 text-sm font-medium text-ink transition-colors hover:border-ink"
-        aria-label="Keranjang"
-      >
-        Keranjang
-        <span className="relative flex h-6 min-w-6 items-center justify-center overflow-hidden rounded-full bg-olive px-1.5 text-xs font-semibold text-bg">
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.span
-              key={count}
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -10, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              {count}
-            </motion.span>
-          </AnimatePresence>
-        </span>
-      </motion.button>
+      <div className="flex items-center gap-4">
+        {status === "authenticated" && (
+          <>
+            <span className="hidden max-w-[120px] truncate text-sm text-soft md:inline">
+              {user?.name.split(" ")[0]}
+            </span>
+            <button onClick={handleLogout} className="text-sm text-ink transition-colors hover:text-olive">
+              Keluar
+            </button>
+          </>
+        )}
+        {status === "guest" && (
+          <Link href="/login" className="text-sm text-ink">
+            Masuk
+          </Link>
+        )}
+        <MotionLink
+          href={cartHref}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 400, damping: 22 }}
+          className="flex items-center gap-2.5 rounded-full border border-line py-2 pl-[18px] pr-2 text-sm font-medium text-ink transition-colors hover:border-ink"
+          aria-label={`Keranjang, ${count} barang`}
+        >
+          Keranjang
+          <span className="relative flex h-6 min-w-6 items-center justify-center overflow-hidden rounded-full bg-olive px-1.5 text-xs font-semibold text-bg">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.span
+                key={count}
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -10, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {count}
+              </motion.span>
+            </AnimatePresence>
+          </span>
+        </MotionLink>
+      </div>
     </motion.nav>
   );
 }

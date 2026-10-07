@@ -4,15 +4,13 @@ import { motion } from "motion/react";
 import ImageSlot from "./ImageSlot";
 import { formatPrice, type Product } from "@/lib/products";
 import { usePdpStore } from "@/lib/pdpStore";
-import { useCartStore } from "@/lib/cartStore";
-import { useToastStore } from "@/lib/toastStore";
+import { useAddToCart } from "@/lib/useAddToCart";
 import { useRouter } from "next/navigation";
 
 export default function ProductCard({ product, href }: { product: Product; href?: string }) {
   const router = useRouter();
   const openPdp = usePdpStore((s) => s.open);
-  const addItem = useCartStore((s) => s.addItem);
-  const showToast = useToastStore((s) => s.show);
+  const addToCart = useAddToCart();
 
   const subline =
     product.badge === "Best Seller"
@@ -56,8 +54,7 @@ export default function ProductCard({ product, href }: { product: Product; href?
           transition={{ duration: 0.3, ease: "easeOut" }}
           onClick={(e) => {
             e.stopPropagation();
-            addItem(product.variants[0]?.id ?? "");
-            showToast("Ditambahkan ke keranjang");
+            void addToCart(product.variants[0]?.id);
           }}
           className="absolute bottom-3.5 left-3.5 right-3.5 rounded-full bg-ink py-3 text-[13px] font-semibold text-bg"
         >
