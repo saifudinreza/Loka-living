@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollProgress from "@/components/ScrollProgress";
 import { formatPrice } from "@/lib/products";
+import { useProvinces } from "@/lib/useProvinces";
 import {
   initCheckout,
   getShippingRate,
@@ -43,6 +44,7 @@ function CheckoutInner() {
 
   // ── Init state ──
   const [order, setOrder] = useState<InitResponse | null>(null);
+  const { provinces, status: provinceStatus, retry: retryProvinces } = useProvinces();
   const [error, setError] = useState("");
 
   // ── Contact form ──
@@ -262,14 +264,21 @@ function CheckoutInner() {
                     onChange={(e) => setProvince(e.target.value)}
                     className="w-full rounded-xl border border-line bg-bg px-4 py-3 text-sm text-ink outline-none transition-colors focus:border-olive"
                   >
-                    <option value="">Pilih provinsi *</option>
-                    <option>Jawa Barat</option>
-                    <option>Jawa Tengah</option>
-                    <option>DI Yogyakarta</option>
-                    <option>Jawa Timur</option>
-                    <option>Banten</option>
-                    <option>Jakarta</option>
+                    <option value="">{provinceStatus === "loading" ? "Memuat provinsi…" : "Pilih provinsi *"}</option>
+                    {provinces.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
                   </select>
+                  {provinceStatus === "error" && (
+                    <p role="alert" className="-mt-2 text-xs text-red-700">
+                      Gagal memuat daftar provinsi.{" "}
+                      <button type="button" onClick={retryProvinces} className="font-semibold underline underline-offset-2">
+                        Coba lagi
+                      </button>
+                    </p>
+                  )}
                   <input
                     placeholder="Kota / Kabupaten *"
                     value={city}
