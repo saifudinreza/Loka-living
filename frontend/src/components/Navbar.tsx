@@ -79,6 +79,9 @@ export default function Navbar() {
             <span className="hidden max-w-[120px] truncate text-sm text-soft md:inline">
               {user?.name.split(" ")[0]}
             </span>
+            <Link href="/account/addresses" className="text-sm text-ink">
+              Alamat
+            </Link>
             <button onClick={handleLogout} className="text-sm text-ink transition-colors hover:text-olive">
               Keluar
             </button>

@@ -1,3 +1,4 @@
+import { useAddressStore } from "./addressStore";
 import { useAuthStore, type AuthUser } from "./authStore";
 import { useCartStore } from "./cartStore";
 import {
@@ -28,6 +29,7 @@ export async function logout(): Promise<void> {
   await apiFetch("/auth/logout", { method: "POST" }).catch(() => undefined);
   dropSession();
   useCartStore.getState().reset();
+  useAddressStore.getState().reset();
 }
 
 // Pemulihan sesi saat halaman dibuka. Promise-nya dibagi supaya tombol yang diklik sebelum pemulihan selesai
