@@ -34,9 +34,12 @@ import { createHash, timingSafeEqual } from "node:crypto";
  * Kenapa 32 byte? 32 byte = 256 bit. Jumlah kemungkinannya begitu besar sehingga
  * menebaknya secara brute-force praktis mustahil.
  */
-/** 32 byte acak, di-encode base64url (43 karakter). */
-export function randomToken(): string {
-  return Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("base64url");
+/**
+ * `bytes` byte acak, di-encode base64url. Default 32 byte (43 karakter, untuk refresh token); 48 byte menghasilkan
+ * tepat 64 karakter (untuk order_token, yang berfungsi seperti kata sandi pesanan tamu).
+ */
+export function randomToken(bytes = 32): string {
+  return Buffer.from(crypto.getRandomValues(new Uint8Array(bytes))).toString("base64url");
 }
 
 /**
