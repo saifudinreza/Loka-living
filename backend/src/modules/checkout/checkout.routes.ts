@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 import { createRateLimiter } from "../../lib/rate-limit";
 import { optionalAuth } from "../auth/auth.guard";
 import { checkoutDocs } from "./checkout.docs";
+import { quoteShipping } from "./checkout.service";
 import { init } from "./stock-reservation.service";
 
 // Dibuat sebagai fungsi (bukan konstanta) supaya setiap aplikasi punya pembatasnya sendiri, seperti authRoutes:
@@ -13,8 +14,13 @@ export function checkoutRoutes() {
   const limiter = createRateLimiter(10, 60_000);
 
   // Di belakang reverse proxy, IP asli ada di X-Forwarded-For; atur di sana, jangan percaya header dari client.
+  const ipOf = ({ request, server }: { request: Request; server: { requestIP(r: Request): { address: string } | null } | null }) =>
+    server?.requestIP(request)?.address ?? "unknown";
   const limitByIp = ({ request, server }: { request: Request; server: { requestIP(r: Request): { address: string } | null } | null }) =>
-    limiter(server?.requestIP(request)?.address ?? "unknown");
+    limiter(ipOf({ request, server }));
+  // Hitung ongkir menulis alamat dan quote setiap kali dipanggil, tapi pembeli wajar mengganti alamat berkali-kali.
+  const rateLimiter = createRateLimiter(30, 60_000);
+  const limitShippingByIp = (ctx: Parameters<typeof ipOf>[0]) => rateLimiter(ipOf(ctx));
 
   return (
     new Elysia({ prefix: "/checkout" })
@@ -38,6 +44,35 @@ export function checkoutRoutes() {
               }),
               { minItems: 1, maxItems: 20 },
             ),
+          }),
+        },
+      )
+      .post(
+        "/shipping-rate",
+        ({ body, user }) => quoteShipping(body, user?.id ?? null),
+        {
+          beforeHandle: limitShippingByIp,
+          detail: checkoutDocs.shippingRate,
+          // Panjang maksimal = ukuran kolom tabel addresses. Tepat salah satu dari address / address_id diperiksa di service.
+          body: t.Object({
+            order_token: t.String({ minLength: 1, maxLength: 64 }),
+            address: t.Optional(
+              t.Object({
+                full_address: t.String({ minLength: 1, maxLength: 2000 }),
+                recipient_name: t.Optional(t.Union([t.String({ maxLength: 120 }), t.Null()])),
+                phone: t.Optional(t.Union([t.String({ maxLength: 20 }), t.Null()])),
+                kelurahan: t.Optional(t.Union([t.String({ maxLength: 80 }), t.Null()])),
+                kecamatan: t.Optional(t.Union([t.String({ maxLength: 80 }), t.Null()])),
+                city: t.Optional(t.Union([t.String({ maxLength: 80 }), t.Null()])),
+                province: t.Optional(t.Union([t.String({ maxLength: 80 }), t.Null()])),
+                postal_code: t.Optional(t.Union([t.String({ maxLength: 10 }), t.Null()])),
+                country: t.Optional(t.Union([t.String({ minLength: 2, maxLength: 2 }), t.Null()])),
+                latitude: t.Optional(t.Union([t.Number({ minimum: -90, maximum: 90 }), t.Null()])),
+                longitude: t.Optional(t.Union([t.Number({ minimum: -180, maximum: 180 }), t.Null()])),
+              }),
+            ),
+            address_id: t.Optional(t.String({ format: "uuid" })),
+            save_address: t.Optional(t.Boolean()),
           }),
         },
       )
