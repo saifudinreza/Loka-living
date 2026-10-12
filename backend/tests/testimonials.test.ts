@@ -3,6 +3,9 @@ import { eq, like } from "drizzle-orm";
 import { createApp } from "../src/app";
 import { db } from "../src/db/client";
 import { products, testimonials } from "../src/db/schema";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 // Membaca data seed (bun run db:seed): 3 testimoni contoh yang sudah dipublikasikan.
 const app = createApp({ enableJobs: false });

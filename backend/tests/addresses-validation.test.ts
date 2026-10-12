@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { AppError } from "../src/lib/errors";
 import { parseCreate, parsePatch } from "../src/modules/account/addresses.validation";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const base = {
   label: "Rumah",

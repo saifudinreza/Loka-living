@@ -3,6 +3,9 @@ import { eq, like } from "drizzle-orm";
 import { createApp } from "../src/app";
 import { db } from "../src/db/client";
 import { productVariants, products } from "../src/db/schema";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 // Tes ini membaca data seed (bun run db:seed): 8 produk aktif, 4 unggulan, 4 ruangan.
 const app = createApp({ enableJobs: false });

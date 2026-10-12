@@ -7,6 +7,9 @@ import { userAddresses, users } from "../src/db/schema";
 import { createUserAddress } from "../src/modules/account/addresses.service";
 import { parseCreate } from "../src/modules/account/addresses.validation";
 import { jwtPlugin, signAccessToken } from "../src/modules/auth/tokens";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const app = createApp({ enableJobs: false });
 const EMAIL_PREFIX = "addrtest-";

@@ -3,6 +3,9 @@ import { eq, like } from "drizzle-orm";
 import { createApp } from "../src/app";
 import { db } from "../src/db/client";
 import { cartItems, productVariants, products, users } from "../src/db/schema";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const app = createApp({ enableJobs: false });
 const SLUG_PREFIX = "carttest-";

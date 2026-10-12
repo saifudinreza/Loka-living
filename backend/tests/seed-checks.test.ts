@@ -8,6 +8,9 @@ import {
   shouldSeedExampleTestimonials,
   validateSeedData,
 } from "../src/db/seed-checks";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const product = (over: Partial<SeedProduct> = {}): SeedProduct => ({
   id: "00000000-0000-0000-0000-000000000001",

@@ -3,6 +3,9 @@ import { and, count, eq, like } from "drizzle-orm";
 import { createApp } from "../src/app";
 import { db } from "../src/db/client";
 import { productVariants, products, users, wishlistItems } from "../src/db/schema";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const app = createApp({ enableJobs: false });
 const SLUG_PREFIX = "wishtest-";

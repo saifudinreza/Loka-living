@@ -8,6 +8,9 @@ import { jwtPlugin, signAccessToken } from "../src/modules/auth/tokens";
 import { MAX_ADDRESSES } from "../src/modules/account/addresses.service";
 import { availableDeliveryDates } from "../src/modules/checkout/checkout.service";
 import { init } from "../src/modules/checkout/stock-reservation.service";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const PREFIX = "csr-";
 

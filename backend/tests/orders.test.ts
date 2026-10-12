@@ -9,6 +9,9 @@ import { jwtPlugin, signAccessToken } from "../src/modules/auth/tokens";
 import { confirm, quoteShipping } from "../src/modules/checkout/checkout.service";
 import { init } from "../src/modules/checkout/stock-reservation.service";
 import { maskEmail, maskPhone } from "../src/modules/orders/orders.service";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const PREFIX = "ord-";
 const FULL_ADDRESS = "Jl. Pesanan Uji No. 7";

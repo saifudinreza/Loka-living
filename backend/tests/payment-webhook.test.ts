@@ -19,6 +19,9 @@ import { confirm, quoteShipping, type ConfirmDeps } from "../src/modules/checkou
 import { init } from "../src/modules/checkout/stock-reservation.service";
 import { webhookRoutes } from "../src/modules/payments/webhook.routes";
 import { verifyMidtransSignature } from "../src/modules/payments/signature";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const PREFIX = "wh-";
 const TEST_SERVER_KEY = "SB-Mid-server-test-webhook-key-12345";
