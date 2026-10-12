@@ -63,6 +63,11 @@ export function sha256Hex(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+/** Mengubah teks menjadi sidik jari SHA-512 (128 karakter heksadesimal). Dipakai verifikasi signature Midtrans. */
+export function sha512Hex(value: string): string {
+  return createHash("sha512").update(value).digest("hex");
+}
+
 /**
  * Membandingkan dua hash heksadesimal dalam waktu yang selalu sama.
  *
@@ -78,8 +83,12 @@ export function sha256Hex(value: string): string {
  * (Disiapkan juga untuk dipakai di verifikasi webhook pembayaran, issue 16.)
  */
 /** Perbandingan waktu-konstan untuk dua string hex; false kalau panjang beda. */
+const HEX = /^[0-9a-f]*$/i;
+
 export function timingSafeEqualHex(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
+  // Panjang sama TIDAK cukup: Buffer.from(x, "hex") membuang karakter non-hex, sehingga buffer bisa lebih pendek dan
+  // timingSafeEqual melempar error (500) untuk input dari luar. Yang bukan hex murni pasti tidak sama.
+  if (a.length !== b.length || !HEX.test(a) || !HEX.test(b)) return false;
   return timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
 }
 

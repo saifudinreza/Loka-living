@@ -10,16 +10,31 @@ import { wishlistRoutes } from "./modules/account/wishlist.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { catalogRoutes } from "./modules/catalog/catalog.routes";
 import { checkoutRoutes } from "./modules/checkout/checkout.routes";
+import { ordersRoutes } from "./modules/orders/orders.routes";
+import type { createTransaction } from "./modules/payments/midtrans.service";
+import { webhookRoutes } from "./modules/payments/webhook.routes";
 import { shippingRoutes } from "./modules/shipping/shipping.routes";
 import { cleanupExpiredRefreshTokens, releaseExpiredReservations } from "./jobs/release-expired-reservations";
 
+/** Dependensi yang bisa diganti (test), mis. klien Midtrans palsu. Default: yang sungguhan. */
+export interface AppDeps {
+  midtrans?: {
+    /** Pengganti pemanggil Snap untuk `confirm`. */
+    createTransaction?: typeof createTransaction;
+    /** Server key untuk memverifikasi signature webhook. Default: MIDTRANS_SERVER_KEY dari env. */
+    serverKey?: string;
+  };
+}
+
 export interface AppOptions {
+  deps?: AppDeps;
   enableJobs?: boolean;
 }
 
 // enableJobs dipakai issue 17 (cron); test memanggil createApp({ enableJobs: false }).
 export function createApp(options: AppOptions = {}) {
   const { enableJobs = true } = options;
+  const midtrans = options.deps?.midtrans;
   const app = new Elysia()
     .use(errorHandler)
     .use(
@@ -37,7 +52,9 @@ export function createApp(options: AppOptions = {}) {
         .use(cartRoutes)
         .use(wishlistRoutes)
         .use(addressesRoutes)
-        .use(checkoutRoutes()),
+        .use(checkoutRoutes({ createTransaction: midtrans?.createTransaction }))
+        .use(ordersRoutes())
+        .use(webhookRoutes({ serverKey: midtrans?.serverKey })),
     );
 
   // Swagger + diagram alur hanya untuk development; di production peta API tidak dibuka.
@@ -77,4 +94,4 @@ export function createApp(options: AppOptions = {}) {
   return app;
 }
 
-export type App = ReturnType<typeof createApp>;
+export type App = ReturnType<typeof createApp>;
