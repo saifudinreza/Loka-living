@@ -14,7 +14,8 @@ export const checkoutDocs = {
     description: [
       "Menahan stok untuk pembeli selama 30 menit supaya dua orang yang membeli stok terakhir bersamaan tidak sama-sama berhasil (oversell).",
       "",
-      "- **Tamu boleh** (tanpa token). Dengan header `Authorization: Bearer <access_token>`, order tercatat di akun (`user_id`). Token yang dikirim tapi tidak valid → 401, bukan dianggap tamu.",
+      "- **Tamu (tanpa token) hanya boleh \"Beli Sekarang\"**: satu jenis barang, maksimal 5 unit, dan total 10 unit yang ditahan per IP per 30 menit. Checkout beberapa barang (dari keranjang) atau qty lebih besar → 401 `LOGIN_REQUIRED`; jatah IP habis → 429 `GUEST_LIMIT_REACHED`. Keranjang sendiri sudah wajib login.",
+      "- **Dengan login** (`Authorization: Bearer <access_token>`): beberapa barang dan qty sampai 99 per barang, order tercatat di akun (`user_id`). Token yang dikirim tapi tidak valid → 401 `UNAUTHORIZED`, bukan dianggap tamu.",
       "- Item dengan varian yang sama digabung (qty dijumlahkan). Harga **selalu dari database**; field `price` di body diabaikan.",
       "- Keranjang tidak dikosongkan di sini (checkout bisa batal); itu dilakukan saat order `paid`.",
       "- Maksimal 5 order draft aktif per user login (`TOO_MANY_PENDING_ORDERS`) dan 10 permintaan per menit per IP (429).",
@@ -44,7 +45,7 @@ export const checkoutDocs = {
         }),
       },
       401: {
-        description: "Token dikirim tapi tidak valid atau kedaluwarsa",
+        description: "`UNAUTHORIZED` (token dikirim tapi tidak valid/kedaluwarsa) atau `LOGIN_REQUIRED` (tamu mencoba checkout beberapa barang atau qty di atas 5)",
         content: errorExample("UNAUTHORIZED", "Silakan login dulu."),
       },
       422: {
@@ -53,7 +54,7 @@ export const checkoutDocs = {
         content: errorExample("STOCK_INSUFFICIENT", "Stok Kursi Santai Rukun (Rotan & Linen) tidak mencukupi. Tersedia: 1, diminta: 2"),
       },
       429: {
-        description: "Terlalu sering memanggil (maks 10 permintaan/menit per IP)",
+        description: "`TOO_MANY_REQUESTS` (maks 10 permintaan/menit per IP) atau `GUEST_LIMIT_REACHED` (tamu sudah menahan 10 unit dalam 30 menit terakhir dari IP yang sama)",
         content: errorExample("TOO_MANY_REQUESTS", "Terlalu banyak percobaan. Coba lagi sebentar lagi."),
       },
     },

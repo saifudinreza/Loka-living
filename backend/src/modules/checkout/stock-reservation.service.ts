@@ -7,7 +7,7 @@ import { AppError } from "../../lib/errors";
 // Reservasi stok: menahan stok untuk pembeli selama 30 menit supaya dua orang yang membeli stok terakhir
 // bersamaan tidak sama-sama berhasil (oversell). Salah satu hal yang tidak boleh dilonggarkan (CLAUDE.md §4).
 
-import { RESERVATION_MINUTES } from "./checkout.constants";
+import { GUEST_MAX_QTY, RESERVATION_MINUTES } from "./checkout.constants";
 export { RESERVATION_MINUTES };
 
 /**
@@ -24,6 +24,25 @@ const MAX_QTY = 99;
 export interface InitItem {
   product_variant_id: string;
   qty: number;
+}
+
+/**
+ * Aturan checkout untuk TAMU (tanpa login): hanya "Beli Sekarang", yaitu satu jenis barang dengan qty terbatas.
+ * Checkout beberapa barang dan pembelian lebih banyak wajib login. Mengembalikan qty yang akan ditahan (untuk jatah
+ * per IP). Varian yang sama dalam beberapa baris digabung dulu, sama seperti `init`.
+ */
+export function assertGuestBuyNow(items: InitItem[]): number {
+  const merged = new Map<string, number>();
+  for (const item of items) merged.set(item.product_variant_id, (merged.get(item.product_variant_id) ?? 0) + item.qty);
+
+  if (merged.size > 1) {
+    throw new AppError(401, "LOGIN_REQUIRED", "Silakan login untuk checkout beberapa barang sekaligus.");
+  }
+  const qty = [...merged.values()][0] ?? 0;
+  if (qty > GUEST_MAX_QTY) {
+    throw new AppError(401, "LOGIN_REQUIRED", `Pembelian tanpa login maksimal ${GUEST_MAX_QTY} unit. Silakan login untuk membeli lebih banyak.`);
+  }
+  return qty;
 }
 
 /**

@@ -112,7 +112,10 @@ Detail kontrak API dan skema: `../TECHNICAL-LokaLiving.md`.
   seluruh toko). Dengan `TRUSTED_PROXY_HOPS=1`, IP klien diambil dari ujung kanan `X-Forwarded-For` (entri yang ditambahkan
   proxy kita); entri di kirinya bisa dipalsukan klien dan tidak dipercaya. Jangan set angka lebih besar dari jumlah proxy
   sebenarnya, dan pastikan proxy menimpa/menambah header itu.
-- **Risiko yang diketahui (butuh keputusan produk):** satu klien tanpa login bisa menahan seluruh stok lewat `checkout/init`
-  (rate limit menghitung permintaan, bukan jumlah barang). Lihat `tests/security.test.ts` (`test.todo`) untuk daftar lengkap.
+- **Pembelian tanpa login = hanya "Beli Sekarang"** (satu jenis barang, maks 5 unit, jatah 10 unit per IP per 30 menit; konstanta di
+  `checkout.constants.ts`). Checkout beberapa barang dan qty lebih besar wajib login (401 `LOGIN_REQUIRED`). Jatah per IP hanya
+  akurat kalau `TRUSTED_PROXY_HOPS` benar. Akun terdaftar belum dibatasi total unitnya, jadi penimbun yang mendaftar banyak akun
+  masih mungkin; kalau itu terjadi, tambahkan batas total unit per user atau verifikasi email/captcha saat register.
+- Risiko lain yang diketahui dan belum diperbaiki: lihat `tests/security.test.ts` (`test.todo`).
 - `order_token` berfungsi seperti kata sandi pesanan tamu: jangan dicatat di log akses.
 - Retensi `payment_transactions.raw_payload` (memuat data pembeli) belum ditentukan; tentukan sebelum production.

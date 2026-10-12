@@ -233,7 +233,9 @@ CREATE TABLE order_status_logs (
 ## 4. Kontrak API (Request/Response)
 
 ### 4.1 `POST /api/checkout/init`
-Menahan stok 30 menit dan membuat order `draft`. Login opsional (tamu boleh). Harga selalu dari database.
+Menahan stok 30 menit dan membuat order `draft`. Harga selalu dari database.
+
+**Aturan tamu vs login (keputusan produk):** tamu hanya boleh "Beli Sekarang", yaitu **satu jenis barang, maksimal 5 unit**, dengan jatah **10 unit per IP per 30 menit**. Checkout beberapa barang (keranjang) dan qty lebih besar wajib login, dan keranjang sendiri sudah wajib login. Aturan ini juga yang mencegah satu klien anonim menimbun seluruh stok.
 
 **Request**
 ```json
@@ -252,7 +254,7 @@ Menahan stok 30 menit dan membuat order `draft`. Login opsional (tamu boleh). Ha
   "currency": "IDR"
 }
 ```
-**Error:** 422 `STOCK_INSUFFICIENT` (pesan memuat nama produk dan bahan), `VARIANT_NOT_FOUND`, `VALIDATION_FAILED`, `TOO_MANY_PENDING_ORDERS` (maks 5 draft aktif per user login); 429 (maks 10 permintaan/menit per IP).
+**Error:** 422 `STOCK_INSUFFICIENT` (pesan memuat nama produk dan bahan), `VARIANT_NOT_FOUND`, `VALIDATION_FAILED`, `TOO_MANY_PENDING_ORDERS` (maks 5 draft aktif per user login); 401 `LOGIN_REQUIRED` (tamu: lebih dari satu jenis barang atau qty > 5); 429 `GUEST_LIMIT_REACHED` (jatah 10 unit per IP tamu habis) atau `TOO_MANY_REQUESTS` (maks 10 permintaan/menit per IP).
 
 ### 4.2 `POST /api/checkout/shipping-rate`
 Menyimpan alamat kirim order (salinan) dan menghitung ongkir dari tabel tarif zona. Alamat diisi dengan **tepat salah satu**: `address` (baru) atau `address_id` (dari buku alamat, wajib login).

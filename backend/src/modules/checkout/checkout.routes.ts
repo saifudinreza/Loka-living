@@ -5,8 +5,9 @@ import { createRateLimiter } from "../../lib/rate-limit";
 import { optionalAuth } from "../auth/auth.guard";
 import { checkoutDocs } from "./checkout.docs";
 import type { createTransaction } from "../payments/midtrans.service";
+import { GUEST_UNIT_BUDGET, RESERVATION_MINUTES } from "./checkout.constants";
 import { confirm, quoteShipping } from "./checkout.service";
-import { init } from "./stock-reservation.service";
+import { assertGuestBuyNow, init } from "./stock-reservation.service";
 
 // Dibuat sebagai fungsi (bukan konstanta) supaya setiap aplikasi punya pembatasnya sendiri, seperti authRoutes:
 // test yang membuat banyak aplikasi tidak saling berbagi hitungan.
@@ -32,6 +33,11 @@ export function checkoutRoutes(deps: CheckoutRoutesDeps = {}) {
     clientIp({ request, server });
   const limitByIp = ({ request, server }: { request: Request; server: { requestIP(r: Request): { address: string } | null } | null }) =>
     limiter(ipOf({ request, server }));
+  // Jatah unit stok yang boleh ditahan satu IP tamu per masa reservasi (lihat GUEST_UNIT_BUDGET).
+  const guestBudget = createRateLimiter(GUEST_UNIT_BUDGET, RESERVATION_MINUTES * 60_000, {
+    code: "GUEST_LIMIT_REACHED",
+    message: "Batas pembelian tanpa login tercapai. Silakan login untuk melanjutkan, atau coba lagi nanti.",
+  });
   // Hitung ongkir menulis alamat dan quote setiap kali dipanggil, tapi pembeli wajar mengganti alamat berkali-kali.
   const rateLimiter = createRateLimiter(SHIPPING_LIMIT, WINDOW_MS);
   const limitShippingByIp = (ctx: Parameters<typeof ipOf>[0]) => rateLimiter(ipOf(ctx));
@@ -49,7 +55,20 @@ export function checkoutRoutes(deps: CheckoutRoutesDeps = {}) {
       })
       .post(
         "/init",
-        ({ body, user }) => init(body.items, user?.id ?? null),
+        async ({ body, user, request, server }) => {
+          // User login: batasnya di service (maks 5 draft aktif). Tamu: hanya Beli Sekarang + jatah unit per IP.
+          if (user) return init(body.items, user.id);
+
+          const qty = assertGuestBuyNow(body.items);
+          const ip = clientIp({ request, server });
+          guestBudget(ip, Date.now(), qty);
+          try {
+            return await init(body.items, null);
+          } catch (e) {
+            guestBudget.refund(ip, qty); // gagal (stok kurang, dst) tidak memakai jatah
+            throw e;
+          }
+        },
         {
           beforeHandle: limitByIp,
           detail: checkoutDocs.init,
