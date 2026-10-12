@@ -11,11 +11,17 @@ import { catalogRoutes } from "./modules/catalog/catalog.routes";
 import { checkoutRoutes } from "./modules/checkout/checkout.routes";
 import { ordersRoutes } from "./modules/orders/orders.routes";
 import type { createTransaction } from "./modules/payments/midtrans.service";
+import { webhookRoutes } from "./modules/payments/webhook.routes";
 import { shippingRoutes } from "./modules/shipping/shipping.routes";
 
 /** Dependensi yang bisa diganti (test), mis. klien Midtrans palsu. Default: yang sungguhan. */
 export interface AppDeps {
-  midtrans?: { createTransaction?: typeof createTransaction };
+  midtrans?: {
+    /** Pengganti pemanggil Snap untuk `confirm`. */
+    createTransaction?: typeof createTransaction;
+    /** Server key untuk memverifikasi signature webhook. Default: MIDTRANS_SERVER_KEY dari env. */
+    serverKey?: string;
+  };
 }
 
 export interface AppOptions {
@@ -25,6 +31,7 @@ export interface AppOptions {
 
 // enableJobs dipakai issue 17 (cron); test memanggil createApp({ enableJobs: false }).
 export function createApp(options: AppOptions = {}) {
+  const midtrans = options.deps?.midtrans;
   const app = new Elysia()
     .use(errorHandler)
     .use(
@@ -34,7 +41,18 @@ export function createApp(options: AppOptions = {}) {
       }),
     )
     .get("/health", () => ({ status: "ok" }))
-    .group("/api", (api) => api.use(authRoutes()).use(catalogRoutes).use(shippingRoutes).use(cartRoutes).use(wishlistRoutes).use(addressesRoutes).use(checkoutRoutes({ createTransaction: options.deps?.midtrans?.createTransaction })).use(ordersRoutes()));
+    .group("/api", (api) =>
+      api
+        .use(authRoutes())
+        .use(catalogRoutes)
+        .use(shippingRoutes)
+        .use(cartRoutes)
+        .use(wishlistRoutes)
+        .use(addressesRoutes)
+        .use(checkoutRoutes({ createTransaction: midtrans?.createTransaction }))
+        .use(ordersRoutes())
+        .use(webhookRoutes({ serverKey: midtrans?.serverKey })),
+    );
 
   // Swagger + diagram alur hanya untuk development; di production peta API tidak dibuka.
   if (process.env.NODE_ENV !== "production") app.use(docsRoutes);
