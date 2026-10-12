@@ -1,0 +1,11 @@
+tolong buatkan saya komentar di code yg  sudah kita merge .
+
+berisikan tentang : 
+- penjelasan code
+- alur kerja code dan fitur 
+- alur kerja function 
+- dan lainnya 
+
+beri saya penjelasan sedetail mungkin tentang code yg sudah kita merge menggunakan bahasa dan analogi yg mudah dipahami .
+
+saya ingin nanti jika saya membuat atau mengerjakan project besar, saya tidak bekerja sendiri melainkan berkelompok, jadi saya ingin lebih paham lagi tentang apa yg saya kerjakan.

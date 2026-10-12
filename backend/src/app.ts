@@ -1,4 +1,5 @@
 import { cors } from "@elysiajs/cors";
+import { cron } from "@elysiajs/cron";
 import { Elysia } from "elysia";
 import { env } from "./config/env";
 import { docsRoutes } from "./docs/docs.routes";
@@ -9,14 +10,18 @@ import { wishlistRoutes } from "./modules/account/wishlist.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { catalogRoutes } from "./modules/catalog/catalog.routes";
 import { checkoutRoutes } from "./modules/checkout/checkout.routes";
+import { webhookRoutes } from "./modules/payments/webhook.routes";
 import { shippingRoutes } from "./modules/shipping/shipping.routes";
+import { cleanupExpiredRefreshTokens, releaseExpiredReservations } from "./jobs/release-expired-reservations";
 
 export interface AppOptions {
   enableJobs?: boolean;
+  midtransServerKey?: string;
 }
 
 // enableJobs dipakai issue 17 (cron); test memanggil createApp({ enableJobs: false }).
-export function createApp(_options: AppOptions = {}) {
+export function createApp(options: AppOptions = {}) {
+  const { enableJobs = true, midtransServerKey } = options;
   const app = new Elysia()
     .use(errorHandler)
     .use(
@@ -26,10 +31,51 @@ export function createApp(_options: AppOptions = {}) {
       }),
     )
     .get("/health", () => ({ status: "ok" }))
-    .group("/api", (api) => api.use(authRoutes()).use(catalogRoutes).use(shippingRoutes).use(cartRoutes).use(wishlistRoutes).use(addressesRoutes).use(checkoutRoutes()));
+    .group("/api", (api) =>
+      api
+        .use(authRoutes())
+        .use(catalogRoutes)
+        .use(shippingRoutes)
+        .use(cartRoutes)
+        .use(wishlistRoutes)
+        .use(addressesRoutes)
+        .use(checkoutRoutes())
+        .use(webhookRoutes({ serverKey: midtransServerKey })),
+    );
 
   // Swagger + diagram alur hanya untuk development; di production peta API tidak dibuka.
   if (process.env.NODE_ENV !== "production") app.use(docsRoutes);
+
+  // Cron jobs (hanya aktif kalau enableJobs=true, default true; test mematikan dengan enableJobs: false)
+  if (enableJobs) {
+    // Tiap menit: lepas reservasi order draft yang kedaluwarsa
+    app.use(
+      cron({
+        name: "release-expired-reservations",
+        pattern: "* * * * *",
+        async run() {
+          const released = await releaseExpiredReservations();
+          if (released > 0) {
+            console.log(`[cron] Released ${released} expired reservations`);
+          }
+        },
+      }),
+    );
+
+    // Harian jam 03:00: bersihkan refresh token kedaluwarsa > 7 hari
+    app.use(
+      cron({
+        name: "cleanup-expired-refresh-tokens",
+        pattern: "0 3 * * *",
+        async run() {
+          const deleted = await cleanupExpiredRefreshTokens();
+          if (deleted > 0) {
+            console.log(`[cron] Cleaned up ${deleted} expired refresh tokens`);
+          }
+        },
+      }),
+    );
+  }
 
   return app;
 }
