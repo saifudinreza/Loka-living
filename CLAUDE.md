@@ -50,10 +50,10 @@ Sedang di **Fase 1 — MVP**, mengerjakan migrasi backend sesuai `issues/README.
 
 **Backend — belum dikerjakan (file masih stub `export {}`):**
 - [ ] 15 `POST /checkout/confirm` + Midtrans Snap — GitHub issue #59 — `payments/midtrans.service.ts`, `checkout.service.ts`
-- [ ] 16 `POST /payment/webhook` + signature — `payments/webhook.routes.ts`, `signature.ts`, `payment-status.service.ts`
-- [ ] 17 Job release reservasi kedaluwarsa — `src/jobs/release-expired-reservations.ts`
-- [ ] 18 `GET /orders`, `GET /orders/:token` — `orders/orders.routes.ts`
-- [ ] 19 Test kritis, uji dengan frontend, update dokumentasi
+- [ ] 16 `POST /payment/webhook` + signature — GitHub #61 — `payments/webhook.routes.ts`, `signature.ts`, `payment-status.service.ts`
+- [ ] 17 Job release reservasi kedaluwarsa — GitHub #62 — `src/jobs/release-expired-reservations.ts`
+- [ ] 18 `GET /orders`, `GET /orders/:token` — GitHub #63 — `orders/orders.routes.ts`
+- [ ] 19 Test kritis, uji dengan frontend, update dokumentasi — GitHub #64
 
 **Frontend (`frontend/src/`):**
 - ✅ Homepage, koleksi, detail produk — data dari API
