@@ -7,7 +7,7 @@ import { orderItems, orderStatusLogs, orders, productVariants, products, users }
 import { randomToken } from "../src/lib/crypto";
 import { MIDTRANS_ORDER_ID_MAX, ORDER_TOKEN_PATTERN } from "../src/lib/order-token";
 import { jwtPlugin, signAccessToken } from "../src/modules/auth/tokens";
-import { MAX_PENDING_ORDERS, init, release } from "../src/modules/checkout/stock-reservation.service";
+import { MAX_PENDING_ORDERS, byCodeUnit, init, release } from "../src/modules/checkout/stock-reservation.service";
 
 const PREFIX = "ckt-";
 const EMAIL_PREFIX = "ckt-";
@@ -486,5 +486,19 @@ describe("stok seed tidak tersentuh", () => {
 
     expect(seedSnapshot.length).toBeGreaterThan(0);
     expect(now).toEqual(seedSnapshot);
+  });
+});
+
+describe("byCodeUnit: urutan kunci varian", () => {
+  test("urutannya sama persis dengan ORDER BY id di PostgreSQL (dasar pencegahan deadlock)", async () => {
+    const uuids: string[] = Array.from({ length: 200 }, () => crypto.randomUUID());
+    const fromDb = (await db.execute(sql`select id::text as id from unnest(${sql.raw(`ARRAY[${uuids.map((u) => `'${u}'`).join(",")}]::uuid[]`)}) as id order by id`)) as unknown as { id: string }[];
+    expect([...uuids].sort(byCodeUnit)).toEqual(fromDb.map((r) => r.id));
+  });
+
+  test("pembanding: -1, 1, 0", () => {
+    expect(byCodeUnit("a", "b")).toBe(-1);
+    expect(byCodeUnit("b", "a")).toBe(1);
+    expect(byCodeUnit("a", "a")).toBe(0);
   });
 });
