@@ -6,6 +6,8 @@ import { db } from "../src/db/client";
 import { addresses, orderItems, orderStatusLogs, orders, paymentTransactions, productVariants, products, users } from "../src/db/schema";
 import { randomToken } from "../src/lib/crypto";
 import { jwtPlugin, signAccessToken } from "../src/modules/auth/tokens";
+import { confirm, quoteShipping } from "../src/modules/checkout/checkout.service";
+import { init } from "../src/modules/checkout/stock-reservation.service";
 import { maskEmail, maskPhone } from "../src/modules/orders/orders.service";
 
 const PREFIX = "ord-";
@@ -137,6 +139,8 @@ describe("penyamaran data pribadi", () => {
   test("email: 2 huruf pertama + *** + domain", () => {
     expect(maskEmail("budi@contoh.com")).toBe("bu***@contoh.com");
     expect(maskEmail("a@contoh.com")).toBe("a***@contoh.com");
+    expect(maskEmail("ab@contoh.com")).toBe("a***@contoh.com"); // bagian lokal pendek tidak tampil utuh
+    expect(maskEmail("abc@contoh.com")).toBe("ab***@contoh.com");
     expect(maskEmail(null)).toBeNull();
   });
   test("telepon: 4 awal + **** + 3 akhir; terlalu pendek disamarkan seluruhnya", () => {
@@ -383,5 +387,46 @@ describe("GET /api/orders/:token — isi response", () => {
     expect(body!.data.payments).toEqual([]);
     expect(body!.data.timeline).toEqual([]);
     expect(body!.data.contact.email).toBeNull();
+  });
+});
+
+describe("GET /api/orders/:token — batas laju", () => {
+  test("lebih dari 60 permintaan per menit dari satu IP → 429", async () => {
+    const get = http(); // satu aplikasi = satu pembatas
+    const statuses: number[] = [];
+    for (let i = 0; i < 61; i++) statuses.push((await get(`/orders/${randomToken(32)}`)).res.status);
+    expect(statuses.slice(0, 60).every((s) => s === 404)).toBe(true);
+    expect(statuses[60]).toBe(429);
+  });
+
+  test("daftar pesanan tidak ikut dibatasi oleh pembatas detail", async () => {
+    const u = await makeUser("limit");
+    const get = http();
+    for (let i = 0; i < 61; i++) await get(`/orders/${randomToken(32)}`);
+    expect((await get("/orders", u.token)).res.status).toBe(200);
+  });
+});
+
+describe("alur nyata: init → shipping-rate → confirm → detail pesanan", () => {
+  test("setelah confirm, can_continue true dan redirect_url terisi walau reservasi init hampir habis", async () => {
+    const { variant } = await makeVariant({ price: 1_000_000 });
+    const created = await init([{ product_variant_id: variant.id, qty: 1 }], null);
+    const { options } = await quoteShipping({ order_token: created.order_token, address: { full_address: FULL_ADDRESS, city: "Jakarta Selatan", province: "DKI Jakarta" } }, null);
+    // pembeli lama mengisi form: reservasi dari init tinggal 1 menit
+    await db.update(orders).set({ reservedUntil: sql`now() + interval '1 minute'` }).where(eq(orders.orderToken, created.order_token));
+
+    await confirm(
+      { order_token: created.order_token, contact: { email: "budi@contoh.com" }, shipping: { courier: options[0]!.courier }, payment_method: "qris" },
+      null,
+      { createTransaction: async () => ({ token: "T", redirect_url: "https://app.sandbox.midtrans.com/snap/v4/redirection/T" }) },
+    );
+
+    const { body } = await http()(`/orders/${created.order_token}`);
+    expect(body!.data.status).toBe("awaiting_payment");
+    expect(body!.data.payment).toEqual({ redirect_url: "https://app.sandbox.midtrans.com/snap/v4/redirection/T", can_continue: true });
+    // jendela bayar ± 30 menit dari confirm, bukan 1 menit sisa dari init
+    const minutesLeft = (new Date(body!.data.reserved_until).getTime() - Date.now()) / 60_000;
+    expect(minutesLeft).toBeGreaterThan(29);
+    expect(minutesLeft).toBeLessThanOrEqual(30);
   });
 });

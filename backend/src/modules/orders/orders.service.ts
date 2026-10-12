@@ -1,7 +1,8 @@
-import { and, asc, count, desc, eq, ne, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "../../db/client";
 import { addresses, orderItems, orderStatusLogs, orders, paymentTransactions, productVariants, products } from "../../db/schema";
 import { AppError } from "../../lib/errors";
+import { ORDER_TOKEN_PATTERN } from "../../lib/order-token";
 
 // Riwayat & detail pesanan (issue 18). Bagian kritisnya adalah KONTROL AKSES:
 //   - pesanan tamu (user_id null)  → siapa pun yang punya order_token; data pribadi disamarkan
@@ -12,18 +13,18 @@ import { AppError } from "../../lib/errors";
 export const LISTABLE_STATUSES = ["awaiting_payment", "paid", "expired", "cancelled", "refunded"] as const;
 export type ListableStatus = (typeof LISTABLE_STATUSES)[number];
 
-// order_token dibuat `init` dari byte acak (base64url). Bentuk yang tidak mungkin sah ditolak tanpa menyentuh database.
-// Rentang (bukan angka tunggal) supaya tetap benar kalau panjang token diubah (mis. batas order_id Midtrans 50 karakter).
-const TOKEN_FORMAT = /^[A-Za-z0-9_-]{32,64}$/;
-
 const orderNotFound = () => new AppError(404, "ORDER_NOT_FOUND", "Pesanan tidak ditemukan.");
 
-/** `budi@contoh.com` → `bu***@contoh.com` (2 huruf pertama bagian lokal + ***). */
+/**
+ * `budi@contoh.com` → `bu***@contoh.com` (2 huruf pertama bagian lokal + ***).
+ * Bagian lokal yang pendek (≤ 2 huruf) hanya menampilkan 1 huruf, supaya tidak tampil utuh.
+ */
 export function maskEmail(email: string | null): string | null {
   if (!email) return null;
   const at = email.lastIndexOf("@");
   if (at < 1) return "***";
-  return `${email.slice(0, Math.min(2, at))}***${email.slice(at)}`;
+  const visible = at <= 2 ? 1 : 2;
+  return `${email.slice(0, visible)}***${email.slice(at)}`;
 }
 
 /** `081234567890` → `0812****890` (4 digit awal + **** + 3 digit akhir). Terlalu pendek → seluruhnya disamarkan. */
@@ -43,7 +44,11 @@ export interface ListQuery {
   limit?: number;
 }
 
-type FirstItem = { product_name: string; material: string | null; image_url: string | null };
+interface FirstItem {
+  product_name: string;
+  material: string | null;
+  image_url: string | null;
+}
 
 export async function listOrders(userId: string, query: ListQuery) {
   const page = query.page ?? 1;
@@ -55,24 +60,11 @@ export async function listOrders(userId: string, query: ListQuery) {
 
   const rows = await db
     .select({
+      id: orders.id,
       orderToken: orders.orderToken,
       status: orders.status,
       createdAt: orders.createdAt,
       totalAmount: orders.totalAmount,
-      // Subquery memakai alias eksplisit: Drizzle membuang prefix tabel di query satu-tabel, jadi kolom
-      // seperti `id` akan ambigu kalau ditulis lewat ${tabel.kolom}.
-      // jumlah barang (Σ qty), dihitung database dalam query yang sama
-      itemCount: sql<number>`coalesce((select sum(oi.qty) from order_items oi where oi.order_id = "orders"."id"), 0)::int`,
-      // satu barang "pertama" (subtotal terbesar, lalu nama) lewat join di dalam query yang sama, bukan query per order
-      firstItem: sql<string | null>`(
-        select json_build_object('product_name', p.name, 'material', v.material, 'image_url', v.image_urls -> 0)
-        from order_items oi
-        inner join product_variants v on v.id = oi.product_variant_id
-        inner join products p on p.id = v.product_id
-        where oi.order_id = "orders"."id"
-        order by oi.subtotal desc, p.name asc
-        limit 1
-      )`,
     })
     .from(orders)
     .where(where)
@@ -81,15 +73,41 @@ export async function listOrders(userId: string, query: ListQuery) {
     .limit(limit)
     .offset((page - 1) * limit);
 
+  // Barang untuk SELURUH halaman diambil dalam satu query (bukan satu per order), lalu dikelompokkan di sini.
+  // Urutan subtotal terbesar dulu, lalu nama: barang pertama per order = gambaran isi pesanan.
+  const lines = rows.length
+    ? await db
+        .select({
+          orderId: orderItems.orderId,
+          qty: orderItems.qty,
+          productName: products.name,
+          material: productVariants.material,
+          imageUrls: productVariants.imageUrls,
+        })
+        .from(orderItems)
+        .innerJoin(productVariants, eq(productVariants.id, orderItems.productVariantId))
+        .innerJoin(products, eq(products.id, productVariants.productId))
+        .where(inArray(orderItems.orderId, rows.map((r) => r.id)))
+        .orderBy(desc(orderItems.subtotal), asc(products.name), asc(orderItems.id))
+    : [];
+
+  const itemCount = new Map<string, number>();
+  const firstItem = new Map<string, FirstItem>();
+  for (const l of lines) {
+    itemCount.set(l.orderId, (itemCount.get(l.orderId) ?? 0) + l.qty);
+    if (!firstItem.has(l.orderId)) {
+      firstItem.set(l.orderId, { product_name: l.productName, material: l.material, image_url: l.imageUrls[0] ?? null });
+    }
+  }
+
   return {
     data: rows.map((r) => ({
       order_token: r.orderToken,
       status: r.status,
       created_at: r.createdAt.toISOString(),
       total_amount: r.totalAmount,
-      item_count: r.itemCount,
-      // driver Drizzle tidak mengurai json mentah: bisa string
-      first_item: (typeof r.firstItem === "string" ? (JSON.parse(r.firstItem) as FirstItem) : r.firstItem) ?? null,
+      item_count: itemCount.get(r.id) ?? 0, // jumlah barang (Σ qty)
+      first_item: firstItem.get(r.id) ?? null,
     })),
     meta: { page, limit, total },
   };
@@ -99,7 +117,8 @@ export async function listOrders(userId: string, query: ListQuery) {
 
 /** `viewerId` = id user yang login, atau null untuk tamu. */
 export async function getOrder(token: string, viewerId: string | null) {
-  if (!TOKEN_FORMAT.test(token)) throw orderNotFound();
+  // Bentuk yang tidak mungkin sah ditolak tanpa menyentuh database.
+  if (!ORDER_TOKEN_PATTERN.test(token)) throw orderNotFound();
 
   const [order] = await db
     .select({
@@ -183,7 +202,8 @@ export async function getOrder(token: string, viewerId: string | null) {
       .orderBy(asc(orderStatusLogs.createdAt), asc(orderStatusLogs.id)),
   ]);
 
-  // Boleh melanjutkan bayar hanya selama menunggu pembayaran dan reservasi stok belum lewat.
+  // Boleh melanjutkan bayar hanya selama menunggu pembayaran dan jendela bayar (`reserved_until`, diperpanjang saat
+  // confirm sampai selaras dengan expiry Midtrans) belum lewat.
   const canContinue = order.status === "awaiting_payment" && order.reservationActive;
   const latestWithUrl = [...payments].reverse().find((p) => p.redirectUrl);
 

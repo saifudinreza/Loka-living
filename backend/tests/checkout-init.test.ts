@@ -5,6 +5,7 @@ import { createApp } from "../src/app";
 import { db } from "../src/db/client";
 import { orderItems, orderStatusLogs, orders, productVariants, products, users } from "../src/db/schema";
 import { randomToken } from "../src/lib/crypto";
+import { MIDTRANS_ORDER_ID_MAX, ORDER_TOKEN_PATTERN } from "../src/lib/order-token";
 import { jwtPlugin, signAccessToken } from "../src/modules/auth/tokens";
 import { MAX_PENDING_ORDERS, init, release } from "../src/modules/checkout/stock-reservation.service";
 
@@ -170,14 +171,16 @@ describe("init: alur dasar", () => {
     expect(result.items.every((i) => i.image_url === null)).toBe(true);
   });
 
-  test("order_token: 64 karakter base64url, acak dan unik; reserved_until tepat 30 menit dari created_at (waktu database)", async () => {
+  test("order_token: 43 karakter base64url (muat di batas order_id Midtrans 50), acak dan unik; reserved_until tepat 30 menit dari created_at (waktu database)", async () => {
     const v = await makeVariant({ stock: 50 });
     const tokens = new Set<string>();
     let last!: Awaited<ReturnType<typeof init>>;
     for (let i = 0; i < 20; i++) {
       last = await init([{ product_variant_id: v.id, qty: 1 }], null);
       tokens.add(last.order_token);
-      expect(last.order_token).toMatch(/^[A-Za-z0-9_-]{64}$/);
+      expect(last.order_token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+      expect(ORDER_TOKEN_PATTERN.test(last.order_token)).toBe(true);
+      expect(last.order_token.length).toBeLessThanOrEqual(MIDTRANS_ORDER_ID_MAX);
     }
     expect(tokens.size).toBe(20);
 

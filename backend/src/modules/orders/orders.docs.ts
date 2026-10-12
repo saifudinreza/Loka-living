@@ -55,6 +55,7 @@ export const ordersDocs = {
       "",
       "- `payment.can_continue`: `awaiting_payment` dan reservasi stok belum lewat. `payment.redirect_url` hanya terisi saat `can_continue`.",
       "- `payments`: setiap percobaan bayar. `timeline`: riwayat status, lama ke baru.",
+      "- Token ada di URL: jangan dicatat di log akses, dan halaman frontend yang memuatnya sebaiknya memakai `Referrer-Policy: no-referrer`. Maksimal 60 permintaan per menit per IP (429).",
       "- Tidak pernah berisi id internal, `user_id`, `raw_payload`, `snap_token`, atau `gateway_transaction_id`. Waktu ISO 8601 UTC.",
     ].join("\n"),
     responses: {
