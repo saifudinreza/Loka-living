@@ -33,6 +33,7 @@ import { decodeIdToken, generateCodeVerifier, generateState } from "arctic";
 import { Elysia, t } from "elysia";
 import { env } from "../../config/env";
 import { timingSafeEqualString } from "../../lib/crypto";
+import { clientIp } from "../../lib/client-ip";
 import { createRateLimiter } from "../../lib/rate-limit";
 import { authDocs } from "./auth.docs";
 import { requireAuth } from "./auth.guard";
@@ -100,7 +101,7 @@ export function authRoutes(google: Google | null = defaultGoogle) {
    */
   // Di belakang reverse proxy, IP asli ada di X-Forwarded-For; atur di sana, jangan percaya header dari client.
   const limitByIp = ({ request, server }: { request: Request; server: { requestIP(r: Request): { address: string } | null } | null }) =>
-    authLimiter(server?.requestIP(request)?.address ?? "unknown");
+    authLimiter(clientIp({ request, server }));
 
   return new Elysia({ prefix: "/auth" })
     .use(jwtPlugin)

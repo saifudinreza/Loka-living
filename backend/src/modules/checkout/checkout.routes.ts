@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
 import { ORDER_TOKEN_MAX_LENGTH } from "../../lib/order-token";
+import { clientIp } from "../../lib/client-ip";
 import { createRateLimiter } from "../../lib/rate-limit";
 import { optionalAuth } from "../auth/auth.guard";
 import { checkoutDocs } from "./checkout.docs";
@@ -28,7 +29,7 @@ export function checkoutRoutes(deps: CheckoutRoutesDeps = {}) {
 
   // Di belakang reverse proxy, IP asli ada di X-Forwarded-For; atur di sana, jangan percaya header dari client.
   const ipOf = ({ request, server }: { request: Request; server: { requestIP(r: Request): { address: string } | null } | null }) =>
-    server?.requestIP(request)?.address ?? "unknown";
+    clientIp({ request, server });
   const limitByIp = ({ request, server }: { request: Request; server: { requestIP(r: Request): { address: string } | null } | null }) =>
     limiter(ipOf({ request, server }));
   // Hitung ongkir menulis alamat dan quote setiap kali dipanggil, tapi pembeli wajar mengganti alamat berkali-kali.

@@ -4,6 +4,7 @@ import { Elysia } from "elysia";
 import { env } from "./config/env";
 import { docsRoutes } from "./docs/docs.routes";
 import { errorHandler } from "./lib/errors";
+import { rejectNul } from "./lib/reject-nul";
 import { addressesRoutes } from "./modules/account/addresses.routes";
 import { cartRoutes } from "./modules/account/cart.routes";
 import { wishlistRoutes } from "./modules/account/wishlist.routes";
@@ -37,6 +38,7 @@ export function createApp(options: AppOptions = {}) {
   const midtrans = options.deps?.midtrans;
   const app = new Elysia()
     .use(errorHandler)
+    .use(rejectNul)
     .use(
       cors({
         origin: env.FRONTEND_URL,
