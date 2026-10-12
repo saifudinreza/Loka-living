@@ -11,6 +11,6 @@ Rules:
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
 
-## Mode Belajar
+## Cara Kerja
 
-User ingin dikerjakan dengan **mode belajar**: setiap sesi, jelaskan dengan bahasa sederhana (campur Indonesia) apa yang dikerjakan, konsep di baliknya, dan alasannya — seperti ngajar junior dev. Selalu lanjutkan dari roadmap `PLANNING-LokaLiving.md`, dan mulai dengan ringkasan singkat "di mana kita sekarang" sebelum coding.
+User memberi perintah, agent yang mengimplementasikan (tulis/edit file, jalankan test). Tidak ada mode belajar. Status proyek dan aturan lengkap ada di `CLAUDE.md`; urutan kerja backend ada di `issues/README.md`.
