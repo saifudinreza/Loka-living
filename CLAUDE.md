@@ -52,7 +52,7 @@ Sedang di **Fase 1 — MVP**, mengerjakan migrasi backend sesuai `issues/README.
 
 **Backend — belum dikerjakan (file masih stub `export {}`):**
 - [ ] 17 Job release reservasi kedaluwarsa — GitHub #62 — `src/jobs/release-expired-reservations.ts`
-- [ ] 18 `GET /orders`, `GET /orders/:token` — GitHub #63 — `orders/orders.routes.ts`
+- ✅ 18 `GET /orders`, `GET /orders/:token` — GitHub #63 — kontrol akses pesanan (tamu lewat token disamarkan, pesanan akun hanya pemilik), `orders/orders.{routes,service,docs}.ts`
 - [ ] 19 Test kritis, uji dengan frontend, update dokumentasi — GitHub #64
 
 **Frontend (`frontend/src/`):**

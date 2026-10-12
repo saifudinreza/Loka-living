@@ -9,6 +9,7 @@ import { wishlistRoutes } from "./modules/account/wishlist.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { catalogRoutes } from "./modules/catalog/catalog.routes";
 import { checkoutRoutes } from "./modules/checkout/checkout.routes";
+import { ordersRoutes } from "./modules/orders/orders.routes";
 import type { createTransaction } from "./modules/payments/midtrans.service";
 import { webhookRoutes } from "./modules/payments/webhook.routes";
 import { shippingRoutes } from "./modules/shipping/shipping.routes";
@@ -49,6 +50,7 @@ export function createApp(options: AppOptions = {}) {
         .use(wishlistRoutes)
         .use(addressesRoutes)
         .use(checkoutRoutes({ createTransaction: midtrans?.createTransaction }))
+        .use(ordersRoutes())
         .use(webhookRoutes({ serverKey: midtrans?.serverKey })),
     );
 
