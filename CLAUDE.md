@@ -48,9 +48,9 @@ Sedang di **Fase 1 — MVP**, mengerjakan migrasi backend sesuai `issues/README.
 - ✅ 13 `POST /checkout/init` — reservasi stok + order draft (PR #55)
 - ✅ 14 `POST /checkout/shipping-rate` — salinan alamat order + quote ongkir tersimpan (PR #57)
 - ✅ 15 `POST /checkout/confirm` + Midtrans Snap (GitHub #59) — total dihitung ulang dari DB, Midtrans dipanggil di dalam transaksi (gagal → order tetap draft); belum diuji dengan key sandbox asli
+- ✅ 16 `POST /api/payment/webhook` + signature (GitHub #61) — `payments/webhook.routes.ts`, `signature.ts`, `payment-status.service.ts`: verifikasi signature SHA-512 constant-time, idempotency event_id, commit/release stok atomik, cart cleanup
 
 **Backend — belum dikerjakan (file masih stub `export {}`):**
-- [ ] 16 `POST /payment/webhook` + signature — GitHub #61 — `payments/webhook.routes.ts`, `signature.ts`, `payment-status.service.ts`
 - [ ] 17 Job release reservasi kedaluwarsa — GitHub #62 — `src/jobs/release-expired-reservations.ts`
 - [ ] 18 `GET /orders`, `GET /orders/:token` — GitHub #63 — `orders/orders.routes.ts`
 - [ ] 19 Test kritis, uji dengan frontend, update dokumentasi — GitHub #64

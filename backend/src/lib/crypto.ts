@@ -63,6 +63,11 @@ export function sha256Hex(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+/** Mengubah teks menjadi sidik jari SHA-512 (128 karakter heksadesimal). Dipakai verifikasi signature Midtrans. */
+export function sha512Hex(value: string): string {
+  return createHash("sha512").update(value).digest("hex");
+}
+
 /**
  * Membandingkan dua hash heksadesimal dalam waktu yang selalu sama.
  *

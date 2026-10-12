@@ -205,3 +205,39 @@ export async function release(tx: Transaction, orderId: string): Promise<void> {
       .where(eq(productVariants.id, id));
   }
 }
+
+/**
+ * Menyelesaikan reservasi stok saat pesanan dibayar (issue 16: settlement / capture accept):
+ * mengurangi `stock_reserved` sebesar qty yang dibeli. `stock_available` tidak berubah karena sudah dikurangi saat `init`.
+ *
+ * Mengunci baris varian urut id (FOR UPDATE) untuk konsistensi dan menghindari deadlock.
+ */
+export async function commit(tx: Transaction, orderId: string): Promise<void> {
+  const items = await tx
+    .select({ variantId: orderItems.productVariantId, qty: orderItems.qty })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId));
+  if (items.length === 0) return;
+
+  const perVariant = new Map<string, number>();
+  for (const { variantId, qty } of items) perVariant.set(variantId, (perVariant.get(variantId) ?? 0) + qty);
+  const ids = [...perVariant.keys()].sort();
+
+  await tx
+    .select({ id: productVariants.id })
+    .from(productVariants)
+    .where(inArray(productVariants.id, ids))
+    .orderBy(asc(productVariants.id))
+    .for("update");
+
+  for (const id of ids) {
+    const qty = perVariant.get(id)!;
+    await tx
+      .update(productVariants)
+      .set({
+        stockReserved: sql`${productVariants.stockReserved} - ${qty}`,
+      })
+      .where(eq(productVariants.id, id));
+  }
+}
+
