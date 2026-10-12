@@ -24,7 +24,7 @@ export const checkoutDocs = {
       200: {
         description: "Stok ditahan, order draft dibuat",
         content: json({
-          order_token: "kqW3...64 karakter acak...Zx9",
+          order_token: "kqW3...43 karakter acak...Zx9",
           reserved_until: "2026-10-09T13:30:00.000Z",
           items: [
             {
@@ -107,7 +107,7 @@ export const checkoutDocs = {
       200: {
         description: "Transaksi Snap dibuat; arahkan user ke `redirect_url`",
         content: json({
-          order_token: "kqW3...64 karakter acak...Zx9",
+          order_token: "kqW3...43 karakter acak...Zx9",
           total_amount: 2516000,
           payment: {
             gateway: "midtrans",
