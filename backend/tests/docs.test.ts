@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { createApp } from "../src/app";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const get = (app: ReturnType<typeof createApp>, path: string) => app.handle(new Request(`http://localhost${path}`));
 

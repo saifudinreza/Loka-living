@@ -8,6 +8,9 @@ import { refreshTokens, users } from "../src/db/schema";
 import { errorHandler } from "../src/lib/errors";
 import { authRoutes } from "../src/modules/auth/auth.routes";
 import { GoogleLoginError, loginWithGoogle, registerUser } from "../src/modules/auth/auth.service";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const PREFIX = "googletest-";
 const unique = () => crypto.randomUUID().slice(0, 8);

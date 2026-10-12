@@ -10,6 +10,9 @@ import { PAYMENT_WINDOW_MINUTES } from "../src/modules/checkout/checkout.constan
 import { INSTALLATION_FEE_IDR, buildSnapItems, computeTotals, confirm, quoteShipping, resolveContact, type ConfirmDeps, type ConfirmInput } from "../src/modules/checkout/checkout.service";
 import { init } from "../src/modules/checkout/stock-reservation.service";
 import { createTransaction, truncateName, type CreateTransactionInput } from "../src/modules/payments/midtrans.service";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const PREFIX = "cfm-";
 
@@ -610,5 +613,31 @@ describe("POST /api/checkout/confirm (HTTP, Midtrans palsu lewat createApp deps)
     const res = await post(app, { order_token: o.token, contact: { email: "budi@contoh.com" }, shipping: { courier: o.courier, shipping_amount: 0 }, payment_method: "qris", total_amount: 1 });
     expect(res.status).toBe(200);
     expect((await res.json() as Json).total_amount).toBe(3_000_000 + o.shippingPrice);
+  });
+});
+
+describe("POST /api/checkout/confirm: tanggal kirim lewat HTTP (regresi)", () => {
+  const post = (app: ReturnType<typeof createApp>, body: unknown) =>
+    app.handle(new Request("http://localhost/api/checkout/confirm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }));
+
+  test("delivery_date yang ditawarkan shipping-rate diterima dan tersimpan (pola format di route harus cocok)", async () => {
+    const o = await makeOrder();
+    const { available_delivery_dates } = await quoteShipping({ order_token: o.token, address: ADDRESS }, null);
+    const { deps } = fakeMidtrans();
+    const app = createApp({ enableJobs: false, deps: { midtrans: { createTransaction: deps.createTransaction } } });
+
+    const res = await post(app, { order_token: o.token, contact: { email: "budi@contoh.com" }, shipping: { courier: o.courier, delivery_date: available_delivery_dates[1] }, payment_method: "qris" });
+    expect(res.status).toBe(200);
+    expect((await orderRow(o.token)).scheduledDeliveryDate).toBe(available_delivery_dates[1]!);
+  });
+
+  test("format tanggal salah (bukan YYYY-MM-DD) → 422", async () => {
+    const o = await makeOrder();
+    const { deps } = fakeMidtrans();
+    const app = createApp({ enableJobs: false, deps: { midtrans: { createTransaction: deps.createTransaction } } });
+    for (const delivery_date of ["besok", "2026-1-5", "20261005", "2026-10-05T10:00"]) {
+      const res = await post(app, { order_token: o.token, contact: { email: "budi@contoh.com" }, shipping: { courier: o.courier, delivery_date }, payment_method: "qris" });
+      expect(res.status).toBe(422);
+    }
   });
 });

@@ -33,43 +33,42 @@ Prinsip kunci: Next.js **tidak pernah** panggil Midtrans/Stripe/Cargo API langsu
   - `src/db/` — schema, migrasi (`bun run db:generate` / `db:migrate`), seed (`db:seed`)
   - `src/modules/{auth,catalog,shipping,account,checkout,payments,orders}/` — `*.routes.ts`, `*.service.ts`, `*.docs.ts`
   - `src/lib/errors.ts` — `AppError` + error handler (format `{ error, code }`)
-  - `tests/` — satu file test per modul
+  - `tests/` — `bun test`, satu file per modul + `purchase-flow.test.ts` (alur utuh); berjalan di **database terpisah** `<db dev>_test` (otomatis dibuat), dikosongkan + seed ulang per file lewat `useCleanDatabase()`; Midtrans diganti palsu lewat `createApp({ deps: { midtrans } })`
+  - Cara menjalankan, env, dan uji manual: `backend/README.md`
 
 ## 3. Status Sekarang (per 2026-10-12)
 
-Sedang di **Fase 1 — MVP**, mengerjakan migrasi backend sesuai `issues/README.md`.
+Sedang di **Fase 1 — MVP**. Migrasi backend ke Elysia (issue 01–19 di `issues/README.md`) **selesai**; yang tersisa adalah uji dengan key Midtrans sandbox dan pekerjaan frontend.
 
-**Backend — issue selesai (sudah di `main`):**
+**Backend (semua di `main`):**
 - ✅ 01–03 Setup project, skema Drizzle 17 tabel + migrasi, seed
 - ✅ 04–06 Auth: register/login, `/me`, refresh (rotasi), logout, login Google
 - ✅ 07–08 Katalog (`/rooms`, `/products`, `/products/:slug`) + testimoni
 - ✅ 09 Tarif ongkir zona, `/shipping/provinces`, `/shipping/estimate`
-- ✅ 10–12 Keranjang akun (+ merge), wishlist, buku alamat
-- ✅ 13 `POST /checkout/init` — reservasi stok + order draft (PR #55)
-- ✅ 14 `POST /checkout/shipping-rate` — salinan alamat order + quote ongkir tersimpan (PR #57)
-- ✅ 15 `POST /checkout/confirm` + Midtrans Snap (GitHub #59) — total dihitung ulang dari DB, Midtrans dipanggil di dalam transaksi (gagal → order tetap draft); belum diuji dengan key sandbox asli
-- ✅ 16 `POST /api/payment/webhook` + signature (GitHub #61) — `payments/webhook.routes.ts`, `signature.ts`, `payment-status.service.ts`: verifikasi signature SHA-512 constant-time, idempotency event_id, commit/release stok atomik, cart cleanup
-
-**Backend — belum dikerjakan (file masih stub `export {}`):**
-- [ ] 17 Job release reservasi kedaluwarsa — GitHub #62 — `src/jobs/release-expired-reservations.ts`
-- ✅ 18 `GET /orders`, `GET /orders/:token` — GitHub #63 — kontrol akses pesanan (tamu lewat token disamarkan, pesanan akun hanya pemilik), `orders/orders.{routes,service,docs}.ts`
-- [ ] 19 Test kritis, uji dengan frontend, update dokumentasi — GitHub #64
+- ✅ 10–12 Keranjang akun (wajib login, tanpa merge), wishlist, buku alamat
+- ✅ 13 `POST /checkout/init` — reservasi stok + order draft
+- ✅ 14 `POST /checkout/shipping-rate` — salinan alamat order + quote ongkir tersimpan
+- ✅ 15 `POST /checkout/confirm` + Midtrans Snap — total dihitung ulang dari DB, Midtrans dipanggil di dalam transaksi (gagal → order tetap draft)
+- ✅ 16 `POST /payment/webhook` — signature SHA-512 constant-time, idempotency, commit/release stok atomik, bersihkan keranjang
+- ✅ 17 Job release reservasi kedaluwarsa (+ pembersihan refresh token harian)
+- ✅ 18 `GET /orders`, `GET /orders/:token` — pesanan tamu lewat token (data disamarkan), pesanan akun hanya pemilik
+- ✅ 19 Test kritis (360 test, database test terpisah), dokumentasi (`backend/README.md`, `TECHNICAL-LokaLiving.md`)
+- **Belum pernah diuji dengan Midtrans sandbox sungguhan** (key masih kosong): nilai `enabled_payments` QRIS (`other_qris`) dan webhook nyata lewat tunnel perlu dicek (langkah di `backend/README.md`).
 
 **Frontend (`frontend/src/`):**
 - ✅ Homepage, koleksi, detail produk — data dari API
 - ✅ Login, register, `/auth/callback` (Google), keranjang akun (wajib login)
 - ✅ Buku alamat (`/account/addresses`), daftar provinsi dari API
-- ✅ `app/checkout/page.tsx` + `lib/checkout.ts` — UI checkout single-screen, sudah memanggil `init` / `shipping-rate` / `confirm`, tapi `confirm` baru bisa jalan setelah issue 15
+- ✅ `app/checkout/page.tsx` + `lib/checkout.ts` — UI checkout single-screen, memanggil `init` / `shipping-rate` / `confirm`; backend-nya sudah lengkap, tinggal diuji dengan key Midtrans
 - ✅ Scroll animation, about, contact
 
 ## Todo (daftar kerja — update tiap selesai)
 
-- [ ] Issue 15–19 berurutan (lihat di atas)
-- [ ] Isi `MIDTRANS_SERVER_KEY` / `MIDTRANS_CLIENT_KEY` (sandbox) di `backend/.env` untuk uji issue 15–16
-- [ ] QA alur beli end-to-end (tes beli QRIS/VA sandbox)
-- [ ] Test kritis wajib: 2 tab browser beli stok terakhir bersamaan (oversell check)
-- [ ] Checkout dari cart (multiple items)
-- [ ] Frontend: wishlist, riwayat pesanan, estimasi ongkir di PDP, tombol WhatsApp (lihat `issues/README.md` bagian frontend)
+- [ ] Isi `MIDTRANS_SERVER_KEY` / `MIDTRANS_CLIENT_KEY` (sandbox) di `backend/.env`, lalu uji Bayar Sekarang → Snap → webhook lewat tunnel (langkah di `backend/README.md`)
+- [ ] QA manual 2 tab browser membeli stok terakhir (otomatis sudah dibuktikan test, tinggal lewat UI)
+- [ ] Checkout dari cart (multiple items) — `lib/cartStore.ts` ada, checkout masih via `?vid=&qty=` dari PDP
+- [ ] Frontend: wishlist, riwayat pesanan (`/orders`), estimasi ongkir di PDP, tombol WhatsApp (lihat `issues/README.md` bagian frontend)
+- [ ] Retensi `payment_transactions.raw_payload` (data pembeli) sebelum production
 - [ ] Integrasi Google Maps Autocomplete (opsional, PLANNING §3)
 
 ## 4. Yang TIDAK BOLEH Dipangkas / Dilonggarkan

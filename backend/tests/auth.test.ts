@@ -5,6 +5,9 @@ import { db } from "../src/db/client";
 import { refreshTokens, users } from "../src/db/schema";
 import { randomToken, sha256Hex, timingSafeEqualHex } from "../src/lib/crypto";
 import { createRateLimiter } from "../src/lib/rate-limit";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const app = createApp({ enableJobs: false });
 const EMAIL_PREFIX = "authtest-";

@@ -5,6 +5,9 @@ import { createApp } from "../src/app";
 import { db } from "../src/db/client";
 import { users } from "../src/db/schema";
 import { jwtPlugin } from "../src/modules/auth/tokens";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const app = createApp({ enableJobs: false });
 const EMAIL_PREFIX = "sessiontest-";

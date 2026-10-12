@@ -4,6 +4,9 @@ import { createApp } from "../src/app";
 import { db } from "../src/db/client";
 import { productVariants, products } from "../src/db/schema";
 import { PROVINCES, determineZone, getRates } from "../src/modules/shipping/shipping-rate.service";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 describe("determineZone", () => {
   test("kasus dari issue", () => {

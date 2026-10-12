@@ -7,27 +7,28 @@ Dokumen ini adalah spesifikasi teknis detail, turunan dari PRD + workflow-system
 ## 1. Arsitektur Sistem
 
 ```
-┌─────────────────┐         ┌──────────────────┐         ┌─────────────────┐
-│   Next.js 14     │  REST   │   Laravel 11 API  │         │   PostgreSQL     │
-│   (Vercel)       │◄───────►│   (Railway/VPS)   │◄───────►│                  │
-└─────────────────┘         └──────────────────┘         └─────────────────┘
-                                     │      │
-                    ┌────────────────┘      └────────────────┐
-                    ▼                                          ▼
-          ┌──────────────────┐                       ┌──────────────────┐
-          │  Redis            │                       │  Cloudflare R2    │
-          │  (queue + cache)  │                       │  (asset storage)  │
-          └──────────────────┘                       └──────────────────┘
-                    │
-       ┌────────────┼────────────┬────────────────┬──────────────────┐
-       ▼            ▼            ▼                ▼                  ▼
-  ┌─────────┐  ┌─────────┐  ┌───────────┐  ┌──────────────┐  ┌──────────────┐
-  │ Midtrans │  │ Stripe   │  │ Google    │  │ Cargo API     │  │ WA Business / │
-  │ (lokal)  │  │ (global) │  │ Maps      │  │ (JNE/Dakota)  │  │ Email (Resend)│
-  └─────────┘  └─────────┘  └───────────┘  └──────────────┘  └──────────────┘
+┌─────────────────┐         ┌───────────────────────┐         ┌─────────────────┐
+│   Next.js 14     │  REST   │  Bun + Elysia API      │         │   PostgreSQL 18  │
+│   (Vercel)       │◄───────►│  (port 8000, /api)     │◄───────►│  (Drizzle ORM)   │
+└─────────────────┘         └───────────────────────┘         └─────────────────┘
+                                     │
+       ┌────────────┬────────────────┼──────────────────┬──────────────────┐
+       ▼            ▼                ▼                  ▼                  ▼
+  ┌─────────┐  ┌─────────┐   ┌─────────────┐   ┌──────────────┐   ┌──────────────┐
+  │ Midtrans │  │ Google   │   │ Cron (satu   │   │ Stripe        │   │ Cargo API /   │
+  │ Snap     │  │ OAuth    │   │ proses)      │   │ (Fase 2)      │   │ WA / Email    │
+  │ (aktif)  │  │ (aktif)  │   │ (aktif)      │   │ (belum)       │   │ (belum)       │
+  └─────────┘  └─────────┘   └─────────────┘   └──────────────┘   └──────────────┘
 ```
 
-Prinsip: Next.js **tidak pernah** memanggil Midtrans/Stripe/Cargo API langsung dari client — semua lewat Laravel API supaya secret key aman & logika perhitungan harga/ongkir tervalidasi di server (lihat PRD §11.1).
+**Status implementasi (MVP):** Midtrans Snap, login Google, dan job terjadwal sudah berjalan. Stripe, API cargo
+sungguhan (sekarang tabel tarif zona), notifikasi WhatsApp/email, Redis, dan Cloudflare R2 belum dipakai: foto
+produk berupa URL statis dan tarif ongkir dihitung dari tabel zona di `shipping-rate.service.ts`.
+
+Backend dulu ditulis dengan Laravel 11, lalu dipindah ke Bun + Elysia + Drizzle supaya seluruh stack TypeScript.
+Kode Laravel lama hanya bisa dilihat lewat `git show bf3765d:backend/...`.
+
+Prinsip: Next.js **tidak pernah** memanggil Midtrans/Stripe/Cargo API langsung dari client — semua lewat backend supaya secret key aman & logika perhitungan harga/ongkir tervalidasi di server (lihat PRD §11.1).
 
 ---
 
@@ -49,42 +50,52 @@ loka-living-web/
 │   │   ├── page.tsx                 # Single-screen checkout
 │   │   └── confirmation/[orderToken]/page.tsx
 │   ├── cart/page.tsx
-│   └── api/                         # Route handlers (proxy tipis ke Laravel, jika perlu)
+│   └── api/                         # Route handlers (proxy tipis ke backend, jika perlu)
 ├── components/
 │   ├── product/ (ProductCard, VariantSwatch, DimensionGuide, ModelViewer)
 │   ├── checkout/ (AddressAutofill, ShippingOptions, DeliveryCalendar, PaymentSelector)
 │   └── ui/ (Pill, Badge, RevealOnScroll)
 ├── lib/
-│   ├── api-client.ts                # fetch wrapper ke Laravel API
+│   ├── api-client.ts                # fetch wrapper ke API backend
 │   ├── store/ (cart.ts — Zustand)
 │   └── validation/ (checkout-schema.ts — Zod)
 └── styles/globals.css               # design tokens dari design.md
 ```
 
-### 2.2 Backend (`loka-living-api/`)
+### 2.2 Backend (`backend/`)
 ```
-loka-living-api/
-├── app/
-│   ├── Http/Controllers/Api/
-│   │   ├── ProductController.php
-│   │   ├── CheckoutController.php
-│   │   ├── ShippingController.php
-│   │   ├── PaymentWebhookController.php
-│   │   └── OrderController.php
-│   ├── Models/ (Product, ProductVariant, Order, OrderItem, Address, PaymentTransaction, ShippingQuote)
-│   ├── Services/
-│   │   ├── Payment/ (MidtransService.php, StripeService.php, PaymentGatewayResolver.php)
-│   │   ├── Shipping/ (CargoRateService.php)
-│   │   └── Stock/ (StockReservationService.php)
-│   ├── Jobs/ (ReleaseExpiredReservations.php, SendOrderConfirmation.php)
-│   └── Events/Listeners/ (OrderPaid, OrderPaidNotifyWarehouse)
-├── database/migrations/
-└── routes/api.php
+backend/
+├── src/
+│   ├── index.ts                  # menjalankan server (port 8000)
+│   ├── app.ts                    # createApp({ enableJobs, deps }): semua route di bawah /api, cron, Swagger (non-production)
+│   ├── config/env.ts             # membaca & memvalidasi variabel environment
+│   ├── db/
+│   │   ├── client.ts             # koneksi postgres.js + Drizzle
+│   │   ├── schema/               # tabel (catalog, users, orders, payments, relations, enums)
+│   │   ├── migrations/           # SQL hasil drizzle-kit (jangan diedit setelah dijalankan)
+│   │   ├── seed.ts, seed-checks.ts
+│   ├── lib/                      # errors (AppError + format {error, code}), crypto, rate-limit, order-token, uuid
+│   ├── jobs/release-expired-reservations.ts
+│   └── modules/
+│       ├── auth/                 # register, login, refresh (rotasi), logout, Google OAuth, guard requireAuth/optionalAuth
+│       ├── catalog/              # rooms, products, testimonials
+│       ├── shipping/             # tabel tarif zona, provinsi, estimasi ongkir
+│       ├── account/              # cart, wishlist, addresses (wajib login)
+│       ├── checkout/             # init (+ reservasi stok), shipping-rate, confirm
+│       ├── payments/             # midtrans.service (Snap), webhook.routes, signature, payment-status.service
+│       └── orders/               # riwayat & detail pesanan
+├── tests/                        # bun test; setup.ts (database test), db-reset.ts, satu file per modul
+├── drizzle.config.ts
+└── bunfig.toml                   # preload tests/setup.ts
 ```
+
+Pola tiap modul: `*.routes.ts` (validasi TypeBox + wiring), `*.service.ts` (logic bisnis, tanpa tahu HTTP), `*.docs.ts` (teks Swagger).
 
 ---
 
 ## 3. Skema Database (DDL Ringkas)
+
+> DDL di bawah adalah gambaran awal (saat perencanaan). **Sumber kebenaran skema adalah `backend/src/db/schema/` dan migrasinya di `backend/src/db/migrations/`.** Beberapa hal sudah berbeda, misalnya tabel `user_addresses`, `cart_items`, `wishlist_items`, `refresh_tokens`, `rooms`, dan `testimonials` yang tidak ada di sini.
 
 ```sql
 -- PRODUCTS
@@ -222,91 +233,139 @@ CREATE TABLE order_status_logs (
 ## 4. Kontrak API (Request/Response)
 
 ### 4.1 `POST /api/checkout/init`
-Reservasi stock awal saat user klik "Beli Langsung" atau "Checkout" dari cart.
+Menahan stok 30 menit dan membuat order `draft`. Login opsional (tamu boleh). Harga selalu dari database.
 
 **Request**
 ```json
-{
-  "items": [
-    { "product_variant_id": "uuid", "qty": 1 }
-  ]
-}
+{ "items": [ { "product_variant_id": "uuid", "qty": 1 } ] }
 ```
-**Response 200**
+**Response 200** (`Cache-Control: no-store`)
 ```json
 {
-  "order_token": "lk_9f2a...",
-  "reserved_until": "2026-07-16T10:15:00Z",
+  "order_token": "kqW3...43 karakter acak...Zx9",
+  "reserved_until": "2026-07-16T10:15:00.000Z",
   "items": [
-    { "name": "Semilir Chair", "variant": "Mahogany", "unit_price": 2100000, "qty": 1 }
+    { "product_variant_id": "uuid", "product_name": "Kursi Santai Rukun", "sku": "KSR-RLN-01", "material": "Rotan & Linen",
+      "color_hex": "#C99A66", "qty": 1, "unit_price": 2450000, "subtotal": 2450000, "image_url": "/images/products/ksr-rln-01-1.jpg" }
   ],
-  "subtotal_amount": 2100000
+  "subtotal_amount": 2450000,
+  "currency": "IDR"
 }
 ```
-**Response 409** (stok habis)
-```json
-{ "error": "OUT_OF_STOCK", "message": "Stok Semilir Chair varian Mahogany sudah habis." }
-```
+**Error:** 422 `STOCK_INSUFFICIENT` (pesan memuat nama produk dan bahan), `VARIANT_NOT_FOUND`, `VALIDATION_FAILED`, `TOO_MANY_PENDING_ORDERS` (maks 5 draft aktif per user login); 429 (maks 10 permintaan/menit per IP).
 
 ### 4.2 `POST /api/checkout/shipping-rate`
+Menyimpan alamat kirim order (salinan) dan menghitung ongkir dari tabel tarif zona. Alamat diisi dengan **tepat salah satu**: `address` (baru) atau `address_id` (dari buku alamat, wajib login).
+
 **Request**
 ```json
 {
-  "order_token": "lk_9f2a...",
+  "order_token": "...",
   "address": {
     "full_address": "Jl. Contoh No. 1",
-    "kelurahan": "...", "kecamatan": "...", "city": "...", "province": "...",
-    "postal_code": "50000", "country": "ID",
-    "latitude": -6.98, "longitude": 110.42
-  }
+    "recipient_name": "Budi", "phone": "081234567890",
+    "kelurahan": "...", "kecamatan": "...", "city": "Jakarta Selatan", "province": "DKI Jakarta",
+    "postal_code": "12345", "country": "ID", "latitude": -6.26, "longitude": 106.81
+  },
+  "save_address": false
 }
 ```
+Hanya `full_address` yang wajib. `save_address: true` (login) menyimpan alamat ke buku alamat.
+
 **Response 200**
 ```json
 {
   "options": [
-    { "courier": "jne_trucking", "service_name": "JTR Reguler", "price": 350000, "eta_days": "3-5 hari" },
-    { "courier": "deliveree", "service_name": "Same-day Truck", "price": 620000, "eta_days": "1 hari" }
+    { "courier": "jne_trucking", "service_name": "JTR Reguler", "price": 66000, "eta_days": "2-3 hari" }
   ],
-  "available_delivery_dates": ["2026-07-20", "2026-07-21", "2026-07-22"]
+  "available_delivery_dates": ["2026-07-17", "2026-07-18", "2026-07-19", "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23"]
 }
 ```
+Quote disimpan 30 menit dan **harga inilah yang dipakai `confirm`**, bukan angka dari browser. **Error:** 404 `ORDER_NOT_FOUND` (tidak ada, bukan draft, atau milik user lain), 410 `RESERVATION_EXPIRED`, 404 `ADDRESS_NOT_FOUND`, 401, 422, 429.
 
 ### 4.3 `POST /api/checkout/confirm`
-Finalisasi checkout, memicu pembuatan payment request ke Midtrans/Stripe.
+Menghitung total final dari database dan membuat transaksi Midtrans Snap. Midtrans dipanggil di dalam transaksi database: kalau gagal, order tetap `draft` dan bisa dicoba lagi. Dua permintaan bersamaan untuk order yang sama: satu 200, satu 404.
 
 **Request**
 ```json
 {
-  "order_token": "lk_9f2a...",
-  "contact": { "email": "user@mail.com", "phone": "+6281234567890" },
-  "address": { "...": "sama seperti di atas" },
-  "shipping": { "courier": "jne_trucking", "delivery_date": "2026-07-20" },
-  "wants_installation": true,
+  "order_token": "...",
+  "contact": { "email": "user@mail.com", "phone": "081234567890" },
+  "shipping": { "courier": "jne_trucking", "delivery_date": "2026-07-18" },
+  "wants_installation": false,
   "payment_method": "qris"
 }
 ```
+`payment_method`: `qris` | `va_bca` | `credit_card`. Tamu wajib mengisi `contact.email`; user login boleh mengosongkannya. `delivery_date` opsional, harus salah satu `available_delivery_dates`. **Tidak ada field total/ongkir**: semua dihitung ulang server (subtotal order + quote ongkir + instalasi Rp150.000 bila `wants_installation`).
+
 **Response 200**
 ```json
 {
-  "order_token": "lk_9f2a...",
-  "total_amount": 2470000,
-  "payment": {
-    "gateway": "midtrans",
-    "snap_token": "66e4fa55-...",
-    "redirect_url": "https://app.sandbox.midtrans.com/snap/v2/vtweb/..."
-  }
+  "order_token": "...",
+  "total_amount": 2516000,
+  "payment": { "gateway": "midtrans", "snap_token": "66e4fa55-...", "redirect_url": "https://app.sandbox.midtrans.com/snap/v4/redirection/..." }
 }
 ```
+Order berubah ke `awaiting_payment` dan jendela bayar 30 menit dimulai (`reserved_until` diperpanjang, sama dengan `expiry` Snap).
 
-### 4.4 `POST /api/webhooks/midtrans`
-Menerima notifikasi dari Midtrans. Body sesuai format Notification Midtrans (`order_id`, `transaction_status`, `signature_key`, dll). Backend **wajib** re-compute signature (`sha512(order_id + status_code + gross_amount + server_key)`) dan cocokkan sebelum lanjut memproses — lihat detail alur di `workflow-system.md` §5.
+| Kondisi | Status | code |
+|---|---|---|
+| Order tidak ada / bukan draft / milik user lain | 404 | `ORDER_NOT_FOUND` |
+| Reservasi lewat | 410 | `RESERVATION_EXPIRED` |
+| Belum ada alamat | 422 | `ADDRESS_REQUIRED` |
+| Kurir tidak ada di quote / quote kedaluwarsa | 422 | `SHIPPING_QUOTE_INVALID` |
+| `MIDTRANS_SERVER_KEY` kosong | 503 | `PAYMENT_CONFIG_MISSING` |
+| Midtrans error / timeout | 502 | `MIDTRANS_UNAVAILABLE` |
 
-### 4.5 `POST /api/webhooks/stripe`
-Menerima event dari Stripe (`payment_intent.succeeded`, dll). Verifikasi pakai `Stripe-Signature` header + webhook secret (`Stripe\Webhook::constructEvent()`).
+Pesan error ke user tidak pernah memuat teks dari Midtrans.
 
-### 4.6 `GET /api/orders/{order_token}`
-Tracking order untuk guest — tidak butuh auth, cukup token yang benar (lihat workflow-system §8).
+### 4.4 `POST /api/payment/webhook`
+Menerima notifikasi dari Midtrans (publik, tanpa CORS/limiter karena dipanggil server Midtrans). Urutan:
+1. Field wajib (`order_id`, `status_code`, `gross_amount`, `signature_key`, `transaction_status`, `transaction_id`) — kurang → 400.
+2. Signature: `sha512(order_id + status_code + gross_amount + server_key)` dari string **mentah**, dibandingkan waktu-konstan. Salah, bukan hex, atau server key kosong → 401 `INVALID_SIGNATURE`.
+3. Dalam satu transaksi DB: idempotency (`transaction_id:transaction_status` di `processed_webhooks`), kunci order `FOR UPDATE`, cek `gross_amount` = `total_amount` (beda → 400 `AMOUNT_MISMATCH`), upsert `payment_transactions`, lalu ubah status order bila transisinya sah.
+
+| `transaction_status` | Order | Stok |
+|---|---|---|
+| `settlement`, `capture`+`accept` | `paid` | commit (`stock_reserved -= qty`) |
+| `expire` / `cancel` | `expired` / `cancelled` | release (reserved → available) |
+| `refund`, `partial_refund` | `refunded` | — |
+| `deny`, `pending`, `authorize`, `capture`+`challenge` | tetap | — |
+
+Transisi sah: `awaiting_payment` → `paid`/`expired`/`cancelled`; `paid` → `refunded`. Uang masuk untuk order yang sudah expired/cancelled tidak mengubah order, tetapi dicatat sebagai log KRITIS di `order_status_logs` (perlu refund manual). Status pembayaran di `payment_transactions` hanya boleh maju (notifikasi terlambat tidak menimpa).
+
+### 4.5 `POST /api/webhooks/stripe` (Fase 2, belum diimplementasi)
+Menerima event dari Stripe (`payment_intent.succeeded`, dll). Verifikasi pakai `Stripe-Signature` header + webhook secret.
+
+### 4.6 Pesanan
+- `GET /api/orders` (login): daftar pesanan user, tanpa `draft`. Query `status`, `page`, `limit` (1–50). Respons `{ data: [{ order_token, status, created_at, total_amount, item_count, first_item }], meta: { page, limit, total } }`.
+- `GET /api/orders/:token` (login opsional): detail. **Pesanan tamu** (`user_id` kosong) terbuka untuk siapa pun yang punya token, dengan email dan telepon disamarkan. **Pesanan akun** hanya untuk pemiliknya yang login; token saja tidak cukup. Semua penolakan = 404 `ORDER_NOT_FOUND` dengan body identik. Maksimal 60 permintaan/menit per IP.
+
+### 4.7 Auth
+| Method | Path | Keterangan |
+|---|---|---|
+| POST | `/api/auth/register` | body `{ email, password, name }` → 201 |
+| POST | `/api/auth/login` | → 200; salah password dan email tak terdaftar memberi respons identik |
+| GET 🔒 | `/api/auth/me` | data user |
+| POST | `/api/auth/refresh` | menukar cookie refresh dengan access token baru (rotasi; token lama dipakai lagi → `REFRESH_TOKEN_REUSED` dan seluruh keluarga token dicabut) |
+| POST | `/api/auth/logout` | mencabut refresh token, hapus cookie (204) |
+| GET | `/api/auth/google`, `/api/auth/google/callback` | login Google |
+
+Respons register/login: `{ token_type: "Bearer", expires_in: 900, access_token, user }`. Access token (JWT) dikirim sebagai `Authorization: Bearer <token>`; refresh token hanya berupa cookie `refresh_token` (`HttpOnly`, `SameSite=Lax`, `Path=/api/auth`), dan database hanya menyimpan hash-nya. 🔒 = wajib login.
+
+### 4.8 Endpoint lain
+| Method | Path | Login |
+|---|---|---|
+| GET | `/api/rooms`, `/api/products`, `/api/products/:slug`, `/api/testimonials` | tidak |
+| GET / POST | `/api/shipping/provinces`, `/api/shipping/estimate` | tidak |
+| GET / PUT / DELETE | `/api/cart`, `/api/cart/items/:variantId` | wajib |
+| GET / POST / DELETE | `/api/wishlist`, `/api/wishlist/:productId` | wajib |
+| GET / POST / PATCH / DELETE | `/api/addresses`, `/api/addresses/:id` | wajib |
+| GET | `/health` | tidak |
+
+**Format error** (semua endpoint): `{ "error": "pesan untuk user", "code": "KODE_TETAP" }`. Frontend membaca `json.error` sebagai teks. Pesan error tidak pernah memuat stack trace, pesan SQL, atau pesan dari Midtrans.
+
+Dokumentasi interaktif lengkap (Swagger) tersedia di mode development: `http://localhost:8000/swagger`.
 
 ---
 
@@ -314,8 +373,8 @@ Tracking order untuk guest — tidak butuh auth, cukup token yang benar (lihat w
 
 ### 5.1 Midtrans (Snap API)
 - Gunakan **Snap** (bukan Core API) untuk MVP — hosted payment page, mengurangi beban kepatuhan PCI-DSS di sisi kita.
-- Flow: `POST /checkout/confirm` di backend → panggil `Snap::createTransaction()` dengan `order_id`, `gross_amount`, `item_details`, `customer_details` → dapat `token` & `redirect_url` → kirim ke frontend.
-- Environment: `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION`.
+- Flow: `POST /checkout/confirm` di backend → panggil `POST /snap/v1/transactions` (lewat `fetch`, tanpa SDK) dengan `order_id`, `gross_amount`, `item_details`, `customer_details` → dapat `token` & `redirect_url` → kirim ke frontend.
+- Environment: `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION`. Item `SHIPPING` dan `INSTALLATION` ikut dikirim: Midtrans menolak transaksi bila jumlah `price × quantity` semua item tidak sama dengan `gross_amount`. `order_id` = `order_token` (maks 50 karakter).
 - **Amount harus integer IDR**, tidak ada desimal.
 
 ### 5.2 Stripe
@@ -342,37 +401,50 @@ Tracking order untuk guest — tidak butuh auth, cukup token yang benar (lihat w
 
 ## 6. Konvensi & Standar Kode
 
-- **Laravel**: PSR-12, `$fillable` eksplisit di semua model (lihat PRD §11.4), Form Request class untuk validasi tiap endpoint (`CheckoutConfirmRequest`, dst), Service class untuk logic bisnis (Controller tetap tipis).
+- **Backend (Elysia)**: TypeScript strict; validasi request dengan TypeBox (`t`) di route; logic bisnis di `*.service.ts` (route tetap tipis); semua angka uang bilangan bulat rupiah (`bigint`); error lewat `AppError(status, code, message)`; perubahan skema = migrasi baru lewat `bun run db:generate`, jangan edit migrasi yang sudah dijalankan; data milik user yang diminta orang lain dijawab 404 (bukan 403).
 - **Next.js**: App Router, Server Components untuk halaman yang tidak butuh interaktivitas berat (Home, Our Brand, About Us), Client Components hanya untuk bagian interaktif (swatch, filter, checkout form).
 - **Naming**: `snake_case` untuk kolom DB & payload API, `camelCase` di TypeScript/JS.
 - **Commit**: gunakan Conventional Commits (`feat:`, `fix:`, `chore:`) — memudahkan tracking progress per fase MVP.
 
 ---
 
-## 7. Testing Strategy (Minimal Viable)
+## 7. Testing
 
-| Area | Jenis Test | Prioritas |
+`bun test` di `backend/`. Test berjalan di **database terpisah** (`<nama database dev>_test`, atau `TEST_DATABASE_URL`): dibuat dan dimigrasi otomatis oleh `tests/setup.ts`, dan sebelum setiap file test semua tabel dikosongkan lalu di-seed ulang (`useCleanDatabase()`). Nama database test wajib berakhiran `_test`; selain itu test menolak berjalan. Midtrans tidak pernah dipanggil sungguhan: `createApp({ deps: { midtrans: { createTransaction, serverKey } } })` menyuntikkan versi palsu.
+
+| Area | Yang dibuktikan | Berkas |
 |---|---|---|
-| `StockReservationService` | Unit test — pastikan `lockForUpdate()` mencegah oversell saat concurrent request | **Tinggi** |
-| Webhook signature verification | Unit test — payload valid vs dipalsukan | **Tinggi** |
-| `POST /checkout/confirm` | Feature test — total harga dihitung ulang di server, tidak percaya input frontend | **Tinggi** |
-| Shipping rate calculation | Feature test dengan mock response Cargo API | Sedang |
-| Checkout form (frontend) | E2E test (Playwright) — alur isi alamat sampai klik bayar | Sedang, bisa fase 2 |
+| Reservasi stok | 5 `init` paralel untuk stok 1 → tepat 1 sukses; tanpa deadlock; varian dobel digabung | `checkout-init.test.ts` |
+| Confirm | total dihitung ulang di server; Midtrans gagal → order tetap draft; confirm paralel → 1 sukses | `checkout-confirm.test.ts` |
+| Webhook | signature salah/bukan hex → 401; idempotensi; deny→settlement; settlement→expire; amount mismatch | `payment-webhook.test.ts` |
+| Job | draft kedaluwarsa dilepas tepat sekali; awaiting_payment/paid tidak tersentuh; satu order gagal tidak menghentikan yang lain | `release-expired-reservations.test.ts` |
+| Pesanan & akses | pesanan akun hanya untuk pemilik; pesanan tamu disamarkan; 404 identik | `orders.test.ts`, `purchase-flow.test.ts` |
+| Alur utuh | init → shipping-rate → confirm → webhook → riwayat; akses silang antar user | `purchase-flow.test.ts` |
+| Auth, katalog, ongkir, akun | satu file per modul | `auth*.test.ts`, `catalog.test.ts`, `shipping.test.ts`, `cart/wishlist/addresses.test.ts` |
 
-Untuk solo developer, prioritaskan test di 3 area "Tinggi" dulu — itu yang paling berisiko kalau salah (duit & stok), sisanya boleh manual testing dulu di MVP.
+Belum ada: test E2E browser (Playwright) untuk alur checkout di frontend, dan uji nyata ke sandbox Midtrans (butuh key dan tunnel untuk webhook; lihat `backend/README.md`).
 
 ---
 
 ## 8. Environment Variables (Ringkasan)
 
 ```
-# Database
+# Backend (backend/.env, lihat backend/.env.example)
+PORT=8000
 DATABASE_URL=
+DATABASE_SSL=false
+TEST_DATABASE_URL=          # opsional; default: <nama database>_test
+FRONTEND_URL=http://localhost:3000
+JWT_ACCESS_SECRET=          # minimal 32 karakter
+ACCESS_TOKEN_TTL_SECONDS=900
+REFRESH_TOKEN_TTL_DAYS=30
+COOKIE_SECURE=false
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=
 
-# Redis
+# Belum dipakai (rencana)
 REDIS_URL=
-
-# Storage
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET=

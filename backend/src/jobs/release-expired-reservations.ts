@@ -27,12 +27,16 @@ export async function releaseExpiredReservations(): Promise<number> {
       await db.transaction(async (tx) => {
         // Kunci order FOR UPDATE, cek ulang status & reserved_until
         const [locked] = await tx
-          .select({ status: orders.status, reservedUntil: orders.reservedUntil })
+          .select({
+            status: orders.status,
+            // dibandingkan di database: satu sumber waktu dengan init/confirm (bukan jam server aplikasi)
+            expired: sql<boolean>`${orders.reservedUntil} is not null and ${orders.reservedUntil} <= now()`,
+          })
           .from(orders)
           .where(eq(orders.id, id))
           .for("update");
 
-        if (!locked || locked.status !== "draft" || !locked.reservedUntil || locked.reservedUntil > new Date()) {
+        if (!locked || locked.status !== "draft" || !locked.expired) {
           return; // Sudah tidak draft atau tidak kedaluwarsa (user confirm tepat sebelum lock)
         }
 
@@ -82,4 +86,4 @@ export async function cleanupExpiredRefreshTokens(): Promise<number> {
     .where(sql`${refreshTokens.expiresAt} <= now() - interval '7 days'`);
 
   return toDelete.length;
-}
+}

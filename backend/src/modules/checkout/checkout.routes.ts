@@ -109,7 +109,7 @@ export function checkoutRoutes(deps: CheckoutRoutesDeps = {}) {
             ),
             shipping: t.Object({
               courier: t.String({ minLength: 1, maxLength: 30 }),
-              delivery_date: t.Optional(t.String({ pattern: "^\d{4}-\d{2}-\d{2}$" })),
+              delivery_date: t.Optional(t.String({ pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" })),
             }),
             wants_installation: t.Optional(t.Boolean()),
             payment_method: t.Union([t.Literal("qris"), t.Literal("va_bca"), t.Literal("credit_card")]),

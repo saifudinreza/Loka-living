@@ -8,6 +8,9 @@ import { randomToken } from "../src/lib/crypto";
 import { MIDTRANS_ORDER_ID_MAX, ORDER_TOKEN_PATTERN } from "../src/lib/order-token";
 import { jwtPlugin, signAccessToken } from "../src/modules/auth/tokens";
 import { MAX_PENDING_ORDERS, byCodeUnit, init, release } from "../src/modules/checkout/stock-reservation.service";
+import { useCleanDatabase } from "./db-reset";
+
+useCleanDatabase();
 
 const PREFIX = "ckt-";
 const EMAIL_PREFIX = "ckt-";

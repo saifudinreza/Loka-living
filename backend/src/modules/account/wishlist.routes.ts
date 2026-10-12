@@ -1,9 +1,12 @@
 import { Elysia, t } from "elysia";
+import { UUID_PATTERN } from "../../lib/uuid";
 import { requireAuth } from "../auth/auth.guard";
 import { addToWishlist, getWishlist, removeFromWishlist } from "./wishlist.service";
 import { wishlistDocs } from "./wishlist.docs";
 
-const productParams = t.Object({ productId: t.String({ format: "uuid" }) });
+// Pola longgar, bukan format "uuid": id produk seed tetap dan polos (000...001) dan ditolak validator ketat bawaan.
+const productId = t.String({ pattern: UUID_PATTERN });
+const productParams = t.Object({ productId });
 
 // Wishlist hanya untuk user login (requireAuth). user_id SELALU dari token, tidak pernah dari body atau URL.
 export const wishlistRoutes = new Elysia({ prefix: "/wishlist" })
@@ -22,7 +25,7 @@ export const wishlistRoutes = new Elysia({ prefix: "/wishlist" })
     },
     {
       detail: wishlistDocs.post,
-      body: t.Object({ product_id: t.String({ format: "uuid" }) }),
+      body: t.Object({ product_id: productId }),
     },
   )
   .delete(
