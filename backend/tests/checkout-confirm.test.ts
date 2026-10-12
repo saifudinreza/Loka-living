@@ -6,7 +6,8 @@ import { db } from "../src/db/client";
 import { orderItems, orderStatusLogs, orders, paymentTransactions, productVariants, products, shippingQuotes, users } from "../src/db/schema";
 import { AppError } from "../src/lib/errors";
 import { jwtPlugin, signAccessToken } from "../src/modules/auth/tokens";
-import { INSTALLATION_FEE_IDR, confirm, quoteShipping, type ConfirmDeps, type ConfirmInput } from "../src/modules/checkout/checkout.service";
+import { PAYMENT_WINDOW_MINUTES } from "../src/modules/checkout/checkout.constants";
+import { INSTALLATION_FEE_IDR, buildSnapItems, computeTotals, confirm, quoteShipping, resolveContact, type ConfirmDeps, type ConfirmInput } from "../src/modules/checkout/checkout.service";
 import { init } from "../src/modules/checkout/stock-reservation.service";
 import { createTransaction, truncateName, type CreateTransactionInput } from "../src/modules/payments/midtrans.service";
 
@@ -481,5 +482,133 @@ describe("POST /api/checkout/confirm (HTTP)", () => {
   test("Bearer token tidak valid → 401, bukan dianggap tamu", async () => {
     const { res } = await http()({ order_token: "x", shipping: { courier: "x" }, payment_method: "qris" }, "token-rusak");
     expect(res.status).toBe(401);
+  });
+});
+
+// ---------- perbaikan dari review PR #66 ----------
+
+describe("fungsi murni confirm", () => {
+  test("computeTotals: subtotal + ongkir + instalasi opsional", () => {
+    expect(computeTotals(2_450_000, 66_000, false)).toEqual({ shipping: 66_000, installation: 0, total: 2_516_000 });
+    expect(computeTotals(2_450_000, 66_000, true)).toEqual({ shipping: 66_000, installation: 150_000, total: 2_666_000 });
+    expect(computeTotals(0, 0, false).total).toBe(0);
+  });
+
+  test("buildSnapItems: SHIPPING/INSTALLATION hanya kalau > 0, jumlah item = total", () => {
+    const lines = [
+      { variantId: "v1", qty: 2, unitPrice: 1_000_000, productName: "Kursi", material: "Jati" },
+      { variantId: "v2", qty: 1, unitPrice: 500_000, productName: "Meja", material: null },
+    ];
+    const full = buildSnapItems(lines, 66_000, 150_000);
+    expect(full.map((i) => i.id)).toEqual(["v1", "v2", "SHIPPING", "INSTALLATION"]);
+    expect(full.map((i) => i.name).slice(0, 2)).toEqual(["Kursi - Jati", "Meja"]);
+    expect(full.reduce((s, i) => s + i.price * i.quantity, 0)).toBe(computeTotals(2_500_000, 66_000, true).total);
+
+    expect(buildSnapItems(lines, 0, 0).map((i) => i.id)).toEqual(["v1", "v2"]);
+  });
+
+  test("resolveContact: tamu wajib email (dinormalkan), user login boleh kosong", () => {
+    expect(resolveContact({ email: " Budi@Contoh.COM ", phone: " 0812 " }, null)).toEqual({ email: "budi@contoh.com", phone: "0812" });
+    expect(() => resolveContact(undefined, null)).toThrow();
+    expect(() => resolveContact({ email: "  " }, null)).toThrow();
+    expect(resolveContact(undefined, "akun@contoh.com")).toEqual({ email: "akun@contoh.com", phone: null });
+    expect(resolveContact({ email: "lain@contoh.com" }, "akun@contoh.com").email).toBe("lain@contoh.com");
+  });
+});
+
+describe("confirm: jendela bayar", () => {
+  test("reserved_until diperpanjang menjadi 30 menit dari confirm (sama dengan expiry Midtrans)", async () => {
+    const o = await makeOrder();
+    // simulasi pembeli lama mengisi form: reservasi dari init tinggal 2 menit
+    await db.update(orders).set({ reservedUntil: sql`now() + interval '2 minutes'` }).where(eq(orders.orderToken, o.token));
+    const { deps, calls } = fakeMidtrans();
+    await confirm(input(o.token, o.courier), null, deps);
+
+    const [row] = await db
+      .select({ seconds: sql<number>`extract(epoch from (${orders.reservedUntil} - now()))::int` })
+      .from(orders)
+      .where(eq(orders.orderToken, o.token));
+    expect(row!.seconds).toBeGreaterThan(29 * 60);
+    expect(row!.seconds).toBeLessThanOrEqual(30 * 60);
+    expect(PAYMENT_WINDOW_MINUTES).toBe(30);
+    expect(calls).toHaveLength(1);
+  });
+});
+
+describe("confirm: pemilihan quote", () => {
+  test("beberapa layanan untuk kurir yang sama → yang termurah, deterministik", async () => {
+    const o = await makeOrder({ price: 1_000_000 });
+    const row = await orderRow(o.token);
+    await db.insert(shippingQuotes).values([
+      { orderId: row.id, courier: o.courier, serviceName: "Mahal", price: o.shippingPrice + 500_000, etaDays: "1", expiresAt: sql`now() + interval '10 minutes'` },
+      { orderId: row.id, courier: o.courier, serviceName: "Murah", price: Math.max(o.shippingPrice - 1, 0), etaDays: "5", expiresAt: sql`now() + interval '10 minutes'` },
+    ]);
+    const { deps } = fakeMidtrans();
+    const out = await confirm(input(o.token, o.courier), null, deps);
+    expect(out.total_amount).toBe(1_000_000 + Math.max(o.shippingPrice - 1, 0));
+  });
+});
+
+describe("midtrans.service: batas order_id", () => {
+  test("order_id lebih dari 50 karakter gagal jelas sebelum request dikirim", async () => {
+    let called = false;
+    const f = (async () => {
+      called = true;
+      return new Response("{}");
+    }) as unknown as typeof fetch;
+    await expect(
+      createTransaction(
+        { orderToken: "x".repeat(64), grossAmount: 1000, items: [{ id: "a", price: 1000, quantity: 1, name: "n" }], customer: { email: "a@b.com", phone: null }, method: "qris" },
+        { serverKey: "k", isProduction: false, fetch: f },
+      ),
+    ).rejects.toThrow(/order_id/);
+    expect(called).toBe(false);
+  });
+});
+
+describe("POST /api/checkout/confirm (HTTP, Midtrans palsu lewat createApp deps)", () => {
+  const post = (app: ReturnType<typeof createApp>, body: unknown) =>
+    app.handle(
+      new Request("http://localhost/api/checkout/confirm", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
+
+  test("sukses: 200 + bentuk response kontrak + Cache-Control no-store", async () => {
+    const o = await makeOrder({ price: 2_450_000 });
+    const { deps, calls } = fakeMidtrans();
+    const app = createApp({ enableJobs: false, deps: { midtrans: { createTransaction: deps.createTransaction } } });
+    const res = await post(app, { order_token: o.token, contact: { email: "budi@contoh.com", phone: "081234567890" }, shipping: { courier: o.courier }, payment_method: "qris" });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    expect(await res.json()).toEqual({
+      order_token: o.token,
+      total_amount: 2_450_000 + o.shippingPrice,
+      payment: { gateway: "midtrans", snap_token: "snap-token-uji", redirect_url: expect.stringContaining("snap-token-uji") },
+    });
+    expect(calls).toHaveLength(1);
+  });
+
+  test("Midtrans gagal: 502 dengan pesan tetap, order tetap draft", async () => {
+    const o = await makeOrder();
+    const { deps } = fakeMidtrans({ fail: new AppError(502, "MIDTRANS_UNAVAILABLE", "Layanan pembayaran sedang bermasalah. Coba lagi beberapa saat.") });
+    const app = createApp({ enableJobs: false, deps: { midtrans: { createTransaction: deps.createTransaction } } });
+    const res = await post(app, { order_token: o.token, contact: { email: "budi@contoh.com" }, shipping: { courier: o.courier }, payment_method: "qris" });
+
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ error: "Layanan pembayaran sedang bermasalah. Coba lagi beberapa saat.", code: "MIDTRANS_UNAVAILABLE" });
+    expect((await orderRow(o.token)).status).toBe("draft");
+  });
+
+  test("total/ongkir palsu di body diabaikan (tidak ditolak, tidak dipakai)", async () => {
+    const o = await makeOrder({ price: 3_000_000 });
+    const { deps } = fakeMidtrans();
+    const app = createApp({ enableJobs: false, deps: { midtrans: { createTransaction: deps.createTransaction } } });
+    const res = await post(app, { order_token: o.token, contact: { email: "budi@contoh.com" }, shipping: { courier: o.courier, shipping_amount: 0 }, payment_method: "qris", total_amount: 1 });
+    expect(res.status).toBe(200);
+    expect((await res.json() as Json).total_amount).toBe(3_000_000 + o.shippingPrice);
   });
 });

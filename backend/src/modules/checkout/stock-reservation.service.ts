@@ -1,13 +1,14 @@
 import { and, asc, count, eq, gt, inArray, sql } from "drizzle-orm";
 import { db, type Transaction } from "../../db/client";
 import { orderItems, orders, orderStatusLogs, productVariants, products, users } from "../../db/schema";
-import { randomToken } from "../../lib/crypto";
+import { generateOrderToken } from "../../lib/order-token";
 import { AppError } from "../../lib/errors";
 
 // Reservasi stok: menahan stok untuk pembeli selama 30 menit supaya dua orang yang membeli stok terakhir
 // bersamaan tidak sama-sama berhasil (oversell). Salah satu hal yang tidak boleh dilonggarkan (CLAUDE.md §4).
 
-export const RESERVATION_MINUTES = 30;
+import { RESERVATION_MINUTES } from "./checkout.constants";
+export { RESERVATION_MINUTES };
 /** Batas order `draft` aktif per user login (pengaman penimbunan stok). */
 export const MAX_PENDING_ORDERS = 5;
 const MAX_QTY = 99;
@@ -118,7 +119,7 @@ export async function init(items: InitItem[], userId: string | null) {
     const [order] = await tx
       .insert(orders)
       .values({
-        orderToken: randomToken(48),
+        orderToken: generateOrderToken(),
         userId,
         status: "draft",
         subtotalAmount,

@@ -1,17 +1,30 @@
 import { Elysia, t } from "elysia";
+import { ORDER_TOKEN_MAX_LENGTH } from "../../lib/order-token";
 import { createRateLimiter } from "../../lib/rate-limit";
 import { optionalAuth } from "../auth/auth.guard";
 import { checkoutDocs } from "./checkout.docs";
+import type { createTransaction } from "../payments/midtrans.service";
 import { confirm, quoteShipping } from "./checkout.service";
 import { init } from "./stock-reservation.service";
 
 // Dibuat sebagai fungsi (bukan konstanta) supaya setiap aplikasi punya pembatasnya sendiri, seperti authRoutes:
 // test yang membuat banyak aplikasi tidak saling berbagi hitungan.
-export function checkoutRoutes() {
+export interface CheckoutRoutesDeps {
+  /** Pengganti klien Midtrans (test). Default: klien sungguhan. */
+  createTransaction?: typeof createTransaction;
+}
+
+// Batas permintaan per IP per menit.
+const INIT_LIMIT = 10;
+const SHIPPING_LIMIT = 30;
+const CONFIRM_LIMIT = 20;
+const WINDOW_MS = 60_000;
+
+export function checkoutRoutes(deps: CheckoutRoutesDeps = {}) {
   // Setiap init menahan stok 30 menit tanpa pembayaran. Tanpa batas, satu orang bisa membuat produk terlihat habis
   // (stok seed ada yang hanya 5). Tamu tidak punya identitas, jadi pengamannya per IP; user login juga dibatasi
   // jumlah order draft-nya di service. Di memori: hilang saat restart, tidak dibagi antar-instance.
-  const limiter = createRateLimiter(10, 60_000);
+  const limiter = createRateLimiter(INIT_LIMIT, WINDOW_MS);
 
   // Di belakang reverse proxy, IP asli ada di X-Forwarded-For; atur di sana, jangan percaya header dari client.
   const ipOf = ({ request, server }: { request: Request; server: { requestIP(r: Request): { address: string } | null } | null }) =>
@@ -19,10 +32,10 @@ export function checkoutRoutes() {
   const limitByIp = ({ request, server }: { request: Request; server: { requestIP(r: Request): { address: string } | null } | null }) =>
     limiter(ipOf({ request, server }));
   // Hitung ongkir menulis alamat dan quote setiap kali dipanggil, tapi pembeli wajar mengganti alamat berkali-kali.
-  const rateLimiter = createRateLimiter(30, 60_000);
+  const rateLimiter = createRateLimiter(SHIPPING_LIMIT, WINDOW_MS);
   const limitShippingByIp = (ctx: Parameters<typeof ipOf>[0]) => rateLimiter(ipOf(ctx));
   // Confirm memanggil layanan pihak ketiga (Midtrans) dan menahan kunci order selama itu; batasi per IP.
-  const confirmLimiter = createRateLimiter(20, 60_000);
+  const confirmLimiter = createRateLimiter(CONFIRM_LIMIT, WINDOW_MS);
   const limitConfirmByIp = (ctx: Parameters<typeof ipOf>[0]) => confirmLimiter(ipOf(ctx));
 
   return (
@@ -58,7 +71,7 @@ export function checkoutRoutes() {
           detail: checkoutDocs.shippingRate,
           // Panjang maksimal = ukuran kolom tabel addresses. Tepat salah satu dari address / address_id diperiksa di service.
           body: t.Object({
-            order_token: t.String({ minLength: 1, maxLength: 64 }),
+            order_token: t.String({ minLength: 1, maxLength: ORDER_TOKEN_MAX_LENGTH }),
             address: t.Optional(
               t.Object({
                 full_address: t.String({ minLength: 1, maxLength: 2000 }),
@@ -81,13 +94,13 @@ export function checkoutRoutes() {
       )
       .post(
         "/confirm",
-        ({ body, user }) => confirm(body, user?.id ?? null),
+        ({ body, user }) => confirm(body, user?.id ?? null, deps.createTransaction ? { createTransaction: deps.createTransaction } : undefined),
         {
           beforeHandle: limitConfirmByIp,
           detail: checkoutDocs.confirm,
           // Sengaja TIDAK ada field total/ongkir: semua angka dihitung ulang server dari database.
           body: t.Object({
-            order_token: t.String({ minLength: 1, maxLength: 64 }),
+            order_token: t.String({ minLength: 1, maxLength: ORDER_TOKEN_MAX_LENGTH }),
             contact: t.Optional(
               t.Object({
                 email: t.Optional(t.String({ format: "email", maxLength: 150 })),
