@@ -11,7 +11,7 @@ import { useCleanDatabase } from "./db-reset";
 useCleanDatabase();
 
 // Temuan audit keamanan (lihat deskripsi PR): setiap perbaikan dibuktikan di sini, dan satu risiko yang belum
-// diperbaiki dicatat sebagai test.todo supaya tidak terlupa.
+// diperbaiki dicatat sebagai test.todo supaya tidak terlupa. (Penimbunan stok oleh tamu sudah diperbaiki: guest-checkout.test.ts.)
 
 type Json = Record<string, any>;
 const NUL = "a\u0000b";
@@ -200,12 +200,6 @@ describe("signature webhook", () => {
 });
 
 describe("risiko yang diketahui dan belum diperbaiki (butuh keputusan produk)", () => {
-  // Terbukti saat audit: satu klien tanpa login, 10 permintaan init (masih di bawah batas 10/menit) dengan qty = stok
-  // tiap varian, menahan SELURUH stok toko selama 30 menit. Rate limit menghitung permintaan, bukan jumlah barang.
-  // Pilihan mitigasi: batas total qty tertahan per IP/tamu, reservasi lebih singkat untuk tamu, login wajib untuk qty
-  // besar, atau captcha. Semuanya mempengaruhi pembeli sungguhan, jadi dipilih pemilik produk.
-  test.todo("satu klien anonim tidak boleh menahan seluruh stok toko lewat checkout/init", () => {});
-
   // Webhook hanya memverifikasi signature. Praktik yang dianjurkan Midtrans: setelah signature valid, konfirmasi status
   // lewat Status API (GET /v2/{order_id}/status) sebelum menandai paid. Butuh key sandbox untuk diuji.
   test.todo("status pembayaran dikonfirmasi ke Midtrans Status API sebelum order ditandai paid", () => {});

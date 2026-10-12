@@ -67,6 +67,7 @@ Sedang di **Fase 1 — MVP**. Migrasi backend ke Elysia (issue 01–19 di `issue
 - [ ] Isi `MIDTRANS_SERVER_KEY` / `MIDTRANS_CLIENT_KEY` (sandbox) di `backend/.env`, lalu uji Bayar Sekarang → Snap → webhook lewat tunnel (langkah di `backend/README.md`)
 - [ ] QA manual 2 tab browser membeli stok terakhir (otomatis sudah dibuktikan test, tinggal lewat UI)
 - [ ] Checkout dari cart (multiple items) — `lib/cartStore.ts` ada, checkout masih via `?vid=&qty=` dari PDP
+- [ ] Frontend: tamu hanya boleh "Beli Sekarang" (1 jenis barang, maks 5 unit; selebihnya wajib login). Saat backend menjawab 401 `LOGIN_REQUIRED` atau 429 `GUEST_LIMIT_REACHED`, arahkan ke halaman login (pesan error-nya sudah berupa teks yang layak ditampilkan)
 - [ ] Frontend: wishlist, riwayat pesanan (`/orders`), estimasi ongkir di PDP, tombol WhatsApp (lihat `issues/README.md` bagian frontend)
 - [ ] Retensi `payment_transactions.raw_payload` (data pembeli) sebelum production
 - [ ] Integrasi Google Maps Autocomplete (opsional, PLANNING §3)
