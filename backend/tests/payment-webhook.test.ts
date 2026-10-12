@@ -14,7 +14,7 @@ import {
   products,
   users,
 } from "../src/db/schema";
-import { sha512Hex } from "../src/lib/crypto";
+import { sha512Hex, timingSafeEqualHex } from "../src/lib/crypto";
 import { confirm, quoteShipping, type ConfirmDeps } from "../src/modules/checkout/checkout.service";
 import { init } from "../src/modules/checkout/stock-reservation.service";
 import { webhookRoutes } from "../src/modules/payments/webhook.routes";
@@ -117,7 +117,7 @@ function buildPayload(opts: {
 }
 
 const appWithKey = (serverKey: string = TEST_SERVER_KEY) =>
-  createApp({ enableJobs: false, midtransServerKey: serverKey });
+  createApp({ enableJobs: false, deps: { midtrans: { serverKey } } });
 
 const orderRow = async (token: string) => (await db.select().from(orders).where(eq(orders.orderToken, token)))[0]!;
 const variantRow = async (id: string) => (await db.select().from(productVariants).where(eq(productVariants.id, id)))[0]!;
@@ -188,7 +188,7 @@ describe("POST /api/payment/webhook: validasi & signature", () => {
     );
 
     expect(res.status).toBe(401);
-    const json = await res.json();
+    const json = (await res.json()) as Record<string, any>;
     expect(json.code).toBe("INVALID_SIGNATURE");
 
     const order = await orderRow(token);
@@ -209,7 +209,7 @@ describe("POST /api/payment/webhook: validasi & signature", () => {
     );
 
     expect(res.status).toBe(401);
-    const json = await res.json();
+    const json = (await res.json()) as Record<string, any>;
     expect(json.code).toBe("INVALID_SIGNATURE");
   });
 
@@ -224,7 +224,7 @@ describe("POST /api/payment/webhook: validasi & signature", () => {
     );
 
     expect(res.status).toBe(400);
-    const json = await res.json();
+    const json = (await res.json()) as Record<string, any>;
     expect(json.code).toBe("BAD_REQUEST");
   });
 
@@ -240,7 +240,7 @@ describe("POST /api/payment/webhook: validasi & signature", () => {
     );
 
     expect(res.status).toBe(404);
-    const json = await res.json();
+    const json = (await res.json()) as Record<string, any>;
     expect(json.code).toBe("ORDER_NOT_FOUND");
   });
 
@@ -258,7 +258,7 @@ describe("POST /api/payment/webhook: validasi & signature", () => {
     );
 
     expect(res.status).toBe(400);
-    const json = await res.json();
+    const json = (await res.json()) as Record<string, any>;
     expect(json.code).toBe("AMOUNT_MISMATCH");
 
     const order = await orderRow(token);
@@ -283,7 +283,7 @@ describe("POST /api/payment/webhook: alur pembayaran & stok", () => {
     );
 
     expect(res.status).toBe(200);
-    const json = await res.json();
+    const json = (await res.json()) as Record<string, any>;
     expect(json.message).toBe("OK");
 
     const order = await orderRow(token);
@@ -380,7 +380,7 @@ describe("POST /api/payment/webhook: alur pembayaran & stok", () => {
       }),
     );
     expect(res1.status).toBe(200);
-    expect((await res1.json()).message).toBe("OK");
+    expect(((await res1.json()) as Record<string, any>).message).toBe("OK");
 
     // kirim kedua
     const res2 = await app.handle(
@@ -391,7 +391,7 @@ describe("POST /api/payment/webhook: alur pembayaran & stok", () => {
       }),
     );
     expect(res2.status).toBe(200);
-    expect((await res2.json()).message).toBe("Already processed");
+    expect(((await res2.json()) as Record<string, any>).message).toBe("Already processed");
 
     // stok hanya berkurang sekali
     const afterVariant = await variantRow(variantId);
@@ -726,5 +726,181 @@ describe("POST /api/payment/webhook: alur pembayaran & stok", () => {
     expect(remainingCart.length).toBe(1);
     expect(remainingCart[0]!.productVariantId).toBe(variantKept.id);
     expect(remainingCart[0]!.qty).toBe(2);
+  });
+});
+
+// ---------- perbaikan dari review PR #68 ----------
+
+const send = (app: ReturnType<typeof appWithKey>, payload: unknown) =>
+  app.handle(
+    new Request("http://localhost/api/payment/webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  );
+
+describe("signature: input bukan hex tidak boleh membuat 500", () => {
+  test("timingSafeEqualHex: panjang sama tapi bukan hex → false (tidak melempar)", () => {
+    expect(timingSafeEqualHex("a".repeat(128), "z".repeat(128))).toBe(false);
+    expect(timingSafeEqualHex("z".repeat(128), "z".repeat(128))).toBe(false);
+    expect(timingSafeEqualHex("abcd", "abcd")).toBe(true);
+    expect(timingSafeEqualHex("ABCD", "abcd")).toBe(true);
+  });
+
+  test("verifyMidtransSignature dengan signature_key 128 karakter non-hex → false", () => {
+    const payload = buildPayload({ order_id: "o", gross_amount: 1000 });
+    expect(verifyMidtransSignature({ ...payload, signature_key: "z".repeat(128) }, TEST_SERVER_KEY)).toBe(false);
+  });
+
+  test("HTTP: signature_key non-hex → 401 INVALID_SIGNATURE, bukan 500", async () => {
+    const { token, totalAmount } = await makeConfirmedOrder();
+    const payload = { ...buildPayload({ order_id: token, gross_amount: totalAmount }), signature_key: "z".repeat(128) };
+    const res = await send(appWithKey(), payload);
+    expect(res.status).toBe(401);
+    expect(((await res.json()) as Record<string, any>).code).toBe("INVALID_SIGNATURE");
+    expect((await orderRow(token)).status).toBe("awaiting_payment");
+  });
+});
+
+describe("stok tidak konsisten tidak boleh menggagalkan pembayaran", () => {
+  test("stock_reserved < qty: order tetap jadi paid, stock_reserved dikoreksi ke 0 (tidak negatif), error kritis dicatat", async () => {
+    const { token, totalAmount, variantId } = await makeConfirmedOrder({ qty: 2 });
+    await db.update(productVariants).set({ stockReserved: 0 }).where(eq(productVariants.id, variantId)); // data rusak
+
+    const errors: string[] = [];
+    const original = console.error;
+    console.error = (...args: unknown[]) => void errors.push(args.map(String).join(" "));
+    try {
+      const res = await send(appWithKey(), buildPayload({ order_id: token, gross_amount: totalAmount }));
+      expect(res.status).toBe(200);
+    } finally {
+      console.error = original;
+    }
+
+    expect((await orderRow(token)).status).toBe("paid");
+    expect((await variantRow(variantId)).stockReserved).toBe(0);
+    expect(errors.some((e) => e.includes("KRITIS") && e.includes("stock_reserved"))).toBe(true);
+  });
+});
+
+describe("notifikasi tidak berurutan", () => {
+  test("pending yang datang SETELAH settlement (transaction_id sama) tidak memundurkan status pembayaran", async () => {
+    const { token, totalAmount } = await makeConfirmedOrder();
+    const app = appWithKey();
+    const transaction_id = `tx-${crypto.randomUUID()}`;
+
+    expect((await send(app, buildPayload({ order_id: token, gross_amount: totalAmount, transaction_status: "settlement", transaction_id }))).status).toBe(200);
+    expect((await send(app, buildPayload({ order_id: token, gross_amount: totalAmount, transaction_status: "pending", transaction_id }))).status).toBe(200);
+
+    const order = await orderRow(token);
+    expect(order.status).toBe("paid");
+    const [payment] = await paymentRows(order.id);
+    expect(payment!.status).toBe("settlement");
+  });
+
+  test("expire yang datang setelah settlement (transaction_id sama) juga tidak menimpa status pembayaran", async () => {
+    const { token, totalAmount } = await makeConfirmedOrder();
+    const app = appWithKey();
+    const transaction_id = `tx-${crypto.randomUUID()}`;
+    await send(app, buildPayload({ order_id: token, gross_amount: totalAmount, transaction_status: "settlement", transaction_id }));
+    await send(app, buildPayload({ order_id: token, gross_amount: totalAmount, transaction_status: "expire", transaction_id }));
+
+    const order = await orderRow(token);
+    expect(order.status).toBe("paid");
+    expect((await paymentRows(order.id))[0]!.status).toBe("settlement");
+  });
+});
+
+describe("uang masuk untuk order yang sudah expired", () => {
+  test("order tidak berubah, tapi jejak KRITIS tercatat di order_status_logs (dapat di-query untuk refund manual)", async () => {
+    const { token, totalAmount, variantId } = await makeConfirmedOrder();
+    const app = appWithKey();
+    await send(app, buildPayload({ order_id: token, gross_amount: totalAmount, transaction_status: "expire" }));
+    const stockAfterExpire = await variantRow(variantId);
+
+    const transaction_id = `tx-${crypto.randomUUID()}`;
+    const original = console.error;
+    console.error = () => {};
+    try {
+      expect((await send(app, buildPayload({ order_id: token, gross_amount: totalAmount, transaction_status: "settlement", transaction_id }))).status).toBe(200);
+    } finally {
+      console.error = original;
+    }
+
+    const order = await orderRow(token);
+    expect(order.status).toBe("expired");
+    expect(await variantRow(variantId)).toMatchObject({ stockAvailable: stockAfterExpire.stockAvailable, stockReserved: stockAfterExpire.stockReserved });
+
+    const logs = await logRows(order.id);
+    const alert = logs[logs.length - 1]!;
+    expect(alert).toMatchObject({ fromStatus: "expired", toStatus: "expired", actor: "midtrans" });
+    expect(alert.note).toContain("KRITIS");
+    expect(alert.note).toContain("refund manual");
+    expect(alert.note).toContain(transaction_id);
+  });
+});
+
+describe("webhook kembar bersamaan", () => {
+  test("dua settlement identik paralel → diproses sekali: stok di-commit sekali, 1 baris pembayaran, 1 log paid", async () => {
+    const { token, totalAmount, variantId, qty } = await makeConfirmedOrder({ qty: 2 });
+    const before = await variantRow(variantId);
+    const payload = buildPayload({ order_id: token, gross_amount: totalAmount, transaction_status: "settlement" });
+    const app = appWithKey();
+
+    const results = await Promise.all([send(app, payload), send(app, payload)]);
+    expect(results.map((r) => r.status)).toEqual([200, 200]);
+    const messages = (await Promise.all(results.map(async (r) => ((await r.json()) as Record<string, any>).message))).sort();
+    expect(messages).toEqual(["Already processed", "OK"]);
+
+    const order = await orderRow(token);
+    expect(order.status).toBe("paid");
+    expect((await variantRow(variantId)).stockReserved).toBe(before.stockReserved - qty);
+    expect(await paymentRows(order.id)).toHaveLength(1);
+    expect((await logRows(order.id)).filter((l) => l.toStatus === "paid")).toHaveLength(1);
+  });
+});
+
+describe("validasi gross_amount dan payload", () => {
+  test("gross_amount tidak bulat atau bukan angka → 400 AMOUNT_MISMATCH, order tidak berubah", async () => {
+    const { token, totalAmount } = await makeConfirmedOrder();
+    const app = appWithKey();
+    for (const gross_amount of [`${totalAmount}.50`, `${totalAmount}.01`, "abc", `${totalAmount}e0`]) {
+      const res = await send(app, buildPayload({ order_id: token, gross_amount }));
+      expect(res.status).toBe(400);
+      expect(((await res.json()) as Record<string, any>).code).toBe("AMOUNT_MISMATCH");
+    }
+    expect((await orderRow(token)).status).toBe("awaiting_payment");
+  });
+
+  test('gross_amount "N.00" (bentuk asli Midtrans) diterima', async () => {
+    const { token, totalAmount } = await makeConfirmedOrder();
+    const res = await send(appWithKey(), buildPayload({ order_id: token, gross_amount: `${totalAmount}.00` }));
+    expect(res.status).toBe(200);
+  });
+
+  test("raw_payload yang disimpan tidak memuat signature_key", async () => {
+    const { token, totalAmount } = await makeConfirmedOrder();
+    await send(appWithKey(), buildPayload({ order_id: token, gross_amount: totalAmount, transaction_status: "settlement" }));
+    const order = await orderRow(token);
+    const [payment] = await paymentRows(order.id);
+    expect(payment!.rawPayload).toBeTruthy();
+    expect(JSON.stringify(payment!.rawPayload)).not.toContain("signature_key");
+    expect((payment!.rawPayload as Record<string, unknown>).transaction_status).toBe("settlement");
+  });
+
+  test("transaction_status tidak dikenal → 200, order tidak berubah, ada peringatan di log", async () => {
+    const { token, totalAmount } = await makeConfirmedOrder();
+    const warnings: string[] = [];
+    const original = console.warn;
+    console.warn = (...args: unknown[]) => void warnings.push(args.map(String).join(" "));
+    try {
+      const res = await send(appWithKey(), buildPayload({ order_id: token, gross_amount: totalAmount, transaction_status: "status_baru_midtrans" }));
+      expect(res.status).toBe(200);
+    } finally {
+      console.warn = original;
+    }
+    expect((await orderRow(token)).status).toBe("awaiting_payment");
+    expect(warnings.some((w) => w.includes("status_baru_midtrans"))).toBe(true);
   });
 });

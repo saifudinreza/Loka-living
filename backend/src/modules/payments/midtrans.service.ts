@@ -1,5 +1,7 @@
 import { env } from "../../config/env";
 import { AppError } from "../../lib/errors";
+import { MIDTRANS_ORDER_ID_MAX } from "../../lib/order-token";
+import { PAYMENT_WINDOW_MINUTES } from "../checkout/checkout.constants";
 
 // Klien Midtrans Snap (issue 15). Dipanggil langsung lewat fetch, tanpa SDK.
 // Aturan keras: pesan error dari Midtrans HANYA masuk log, tidak pernah ke client.
@@ -16,8 +18,9 @@ export const ENABLED_PAYMENTS: Record<PaymentMethod, string[]> = {
 
 // Batas Midtrans: nama item maksimal 50 karakter.
 const MAX_ITEM_NAME = 50;
-const TIMEOUT_MS = 15_000;
-const EXPIRY_MINUTES = 30;
+// Panggilan ini terjadi di dalam transaksi database (lihat confirm): koneksi dan kunci order tertahan selama menunggu,
+// jadi batasnya sengaja pendek.
+const TIMEOUT_MS = 10_000;
 
 export interface SnapItem {
   id: string;
@@ -80,6 +83,10 @@ export async function createTransaction(
     throw new AppError(503, "PAYMENT_CONFIG_MISSING", "Metode pembayaran sedang tidak tersedia.");
   }
 
+  // order_id = order_token. Terlalu panjang akan ditolak Midtrans dengan error samar; lebih baik gagal jelas di sini.
+  if (input.orderToken.length > MIDTRANS_ORDER_ID_MAX) {
+    throw new Error(`Midtrans: order_id (${input.orderToken.length} karakter) melebihi batas ${MIDTRANS_ORDER_ID_MAX}`);
+  }
   assertItemsMatchTotal(input.items, input.grossAmount);
 
   const base = config.isProduction ? "https://app.midtrans.com" : "https://app.sandbox.midtrans.com";
@@ -89,7 +96,7 @@ export async function createTransaction(
     customer_details: { email: input.customer.email, ...(input.customer.phone ? { phone: input.customer.phone } : {}) },
     enabled_payments: ENABLED_PAYMENTS[input.method],
     // Supaya Midtrans mengirim webhook `expire` kalau user tidak membayar (diproses issue 16).
-    expiry: { unit: "minutes", duration: EXPIRY_MINUTES },
+    expiry: { unit: "minutes", duration: PAYMENT_WINDOW_MINUTES },
   };
 
   let res: Response;

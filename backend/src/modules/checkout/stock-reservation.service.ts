@@ -1,13 +1,14 @@
 import { and, asc, count, eq, gt, inArray, sql } from "drizzle-orm";
 import { db, type Transaction } from "../../db/client";
 import { orderItems, orders, orderStatusLogs, productVariants, products, users } from "../../db/schema";
-import { randomToken } from "../../lib/crypto";
+import { generateOrderToken } from "../../lib/order-token";
 import { AppError } from "../../lib/errors";
 
 // Reservasi stok: menahan stok untuk pembeli selama 30 menit supaya dua orang yang membeli stok terakhir
 // bersamaan tidak sama-sama berhasil (oversell). Salah satu hal yang tidak boleh dilonggarkan (CLAUDE.md §4).
 
-export const RESERVATION_MINUTES = 30;
+import { RESERVATION_MINUTES } from "./checkout.constants";
+export { RESERVATION_MINUTES };
 /** Batas order `draft` aktif per user login (pengaman penimbunan stok). */
 export const MAX_PENDING_ORDERS = 5;
 const MAX_QTY = 99;
@@ -118,7 +119,7 @@ export async function init(items: InitItem[], userId: string | null) {
     const [order] = await tx
       .insert(orders)
       .values({
-        orderToken: randomToken(48),
+        orderToken: generateOrderToken(),
         userId,
         status: "draft",
         subtotalAmount,
@@ -223,21 +224,28 @@ export async function commit(tx: Transaction, orderId: string): Promise<void> {
   for (const { variantId, qty } of items) perVariant.set(variantId, (perVariant.get(variantId) ?? 0) + qty);
   const ids = [...perVariant.keys()].sort();
 
-  await tx
-    .select({ id: productVariants.id })
+  const locked = await tx
+    .select({ id: productVariants.id, reserved: productVariants.stockReserved })
     .from(productVariants)
     .where(inArray(productVariants.id, ids))
     .orderBy(asc(productVariants.id))
     .for("update");
+  const reservedOf = new Map(locked.map((r) => [r.id, r.reserved]));
 
   for (const id of ids) {
     const qty = perVariant.get(id)!;
+    const reserved = reservedOf.get(id) ?? 0;
+    // Pembayaran sudah diterima, jadi tidak boleh gagal hanya karena angka stok tidak konsisten: CHECK
+    // `stock_reserved >= 0` akan menggagalkan transaksi (500), Midtrans mengulang notifikasi tanpa henti, dan order
+    // yang sudah dibayar tidak pernah menjadi `paid`. Dikoreksi ke 0 dan dicatat keras agar stok diperiksa manual.
+    if (reserved < qty) {
+      console.error(
+        `[stock] KRITIS: commit order ${orderId}, varian ${id}: stock_reserved (${reserved}) < qty (${qty}). Dikoreksi ke 0; periksa stok manual.`,
+      );
+    }
     await tx
       .update(productVariants)
-      .set({
-        stockReserved: sql`${productVariants.stockReserved} - ${qty}`,
-      })
+      .set({ stockReserved: sql`GREATEST(${productVariants.stockReserved} - ${qty}, 0)` })
       .where(eq(productVariants.id, id));
   }
 }
-
