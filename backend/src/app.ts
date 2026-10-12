@@ -10,18 +10,16 @@ import { wishlistRoutes } from "./modules/account/wishlist.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { catalogRoutes } from "./modules/catalog/catalog.routes";
 import { checkoutRoutes } from "./modules/checkout/checkout.routes";
-import { webhookRoutes } from "./modules/payments/webhook.routes";
 import { shippingRoutes } from "./modules/shipping/shipping.routes";
 import { cleanupExpiredRefreshTokens, releaseExpiredReservations } from "./jobs/release-expired-reservations";
 
 export interface AppOptions {
   enableJobs?: boolean;
-  midtransServerKey?: string;
 }
 
 // enableJobs dipakai issue 17 (cron); test memanggil createApp({ enableJobs: false }).
 export function createApp(options: AppOptions = {}) {
-  const { enableJobs = true, midtransServerKey } = options;
+  const { enableJobs = true } = options;
   const app = new Elysia()
     .use(errorHandler)
     .use(
@@ -39,8 +37,7 @@ export function createApp(options: AppOptions = {}) {
         .use(cartRoutes)
         .use(wishlistRoutes)
         .use(addressesRoutes)
-        .use(checkoutRoutes())
-        .use(webhookRoutes({ serverKey: midtransServerKey })),
+        .use(checkoutRoutes()),
     );
 
   // Swagger + diagram alur hanya untuk development; di production peta API tidak dibuka.
