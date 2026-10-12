@@ -1,9 +1,21 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { addresses, orderItems, orders, productVariants, products, shippingQuotes, userAddresses } from "../../db/schema";
+import {
+  addresses,
+  orderItems,
+  orderStatusLogs,
+  orders,
+  paymentTransactions,
+  productVariants,
+  products,
+  shippingQuotes,
+  userAddresses,
+  users,
+} from "../../db/schema";
 import { AppError } from "../../lib/errors";
 import { createUserAddress } from "../account/addresses.service";
 import { parseCreate } from "../account/addresses.validation";
+import { createTransaction, type PaymentMethod } from "../payments/midtrans.service";
 import { getRates } from "../shipping/shipping-rate.service";
 
 // Langkah kedua checkout (issue 14): menyimpan alamat kirim order lalu menghitung ongkir.
@@ -174,5 +186,169 @@ export async function quoteShipping(input: ShippingRateInput, userId: string | n
     );
 
     return { options: rates, available_delivery_dates: availableDeliveryDates() };
+  });
+}
+
+// ---------- confirm (issue 15) ----------
+
+/** Biaya instalasi tetap (rupiah). Satu-satunya tempat angka ini ditulis. */
+export const INSTALLATION_FEE_IDR = 150_000;
+
+export interface ConfirmInput {
+  order_token: string;
+  contact?: { email?: string; phone?: string };
+  shipping: { courier: string; delivery_date?: string };
+  wants_installation?: boolean;
+  payment_method: PaymentMethod;
+}
+
+/** Bisa diganti di test supaya tidak memanggil Midtrans sungguhan. */
+export interface ConfirmDeps {
+  createTransaction: typeof createTransaction;
+}
+
+/**
+ * Langkah terakhir sebelum bayar. Total dihitung ULANG dari database; angka dari client tidak pernah dipakai
+ * (body bahkan tidak punya field total/ongkir).
+ *
+ * Seluruh pekerjaan ada dalam SATU transaksi setelah kunci baris order (FOR UPDATE):
+ *   - request kembar (klik dua kali) menunggu di kunci, lalu melihat status bukan draft lagi → 404;
+ *   - `shipping-rate` memakai kunci yang sama, jadi quote tidak bisa berganti di tengah perhitungan;
+ *   - Midtrans dipanggil SEBELUM status diubah. Kalau Midtrans gagal, transaksi di-rollback: order tetap `draft`
+ *     dan user bisa mencoba lagi. Kalau status diubah dulu, order tersangkut di `awaiting_payment`.
+ */
+export async function confirm(
+  input: ConfirmInput,
+  userId: string | null,
+  deps: ConfirmDeps = { createTransaction },
+) {
+  const wantsInstallation = input.wants_installation === true;
+
+  // Sebelum database: tamu wajib mengisi email (user login memakai email akunnya).
+  const guestEmail = input.contact?.email?.trim().toLowerCase();
+  if (!userId && !guestEmail) throw invalid('Field "contact.email" wajib diisi.');
+
+  // Tanggal kirim hanya boleh dari rentang yang ditawarkan `shipping-rate` (H+1..H+7 WIB).
+  const deliveryDate = input.shipping.delivery_date;
+  if (deliveryDate !== undefined && !availableDeliveryDates().includes(deliveryDate)) {
+    throw invalid("Tanggal pengiriman tidak tersedia.");
+  }
+
+  return db.transaction(async (tx) => {
+    const [order] = await tx
+      .select({
+        id: orders.id,
+        userId: orders.userId,
+        status: orders.status,
+        addressId: orders.addressId,
+        subtotalAmount: orders.subtotalAmount,
+        expired: sql<boolean>`${orders.reservedUntil} is not null and ${orders.reservedUntil} <= now()`,
+      })
+      .from(orders)
+      .where(eq(orders.orderToken, input.order_token))
+      .limit(1)
+      .for("update");
+    // Order milik user lain = 404, bukan 403: keberadaan data tidak bocor.
+    if (!order || order.status !== "draft") throw orderNotFound();
+    if (order.userId && order.userId !== userId) throw orderNotFound();
+    if (order.expired) throw new AppError(410, "RESERVATION_EXPIRED", "Reservasi stok sudah berakhir. Mulai checkout lagi.");
+    if (!order.addressId) throw new AppError(422, "ADDRESS_REQUIRED", "Isi alamat pengiriman dulu.");
+
+    // Ongkir = harga quote yang disimpan server (bukan angka dari browser), dan quote belum kedaluwarsa.
+    const [quote] = await tx
+      .select({ price: shippingQuotes.price })
+      .from(shippingQuotes)
+      .where(
+        and(
+          eq(shippingQuotes.orderId, order.id),
+          eq(shippingQuotes.courier, input.shipping.courier),
+          sql`${shippingQuotes.expiresAt} > now()`,
+        ),
+      )
+      .limit(1);
+    if (!quote) {
+      throw new AppError(422, "SHIPPING_QUOTE_INVALID", "Ongkir sudah tidak berlaku. Hitung ongkir lagi.");
+    }
+
+    // Kontak: user login boleh tanpa isian (pakai email akun; telepon opsional).
+    let email = guestEmail;
+    let phone = input.contact?.phone?.trim() || null;
+    if (userId) {
+      const [account] = await tx.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
+      email = guestEmail || account!.email;
+    }
+
+    const shipping = quote.price;
+    const installation = wantsInstallation ? INSTALLATION_FEE_IDR : 0;
+    const total = order.subtotalAmount + shipping + installation;
+
+    // Item untuk Midtrans: harga snapshot dari order_items (bukan harga live).
+    const lines = await tx
+      .select({
+        variantId: orderItems.productVariantId,
+        qty: orderItems.qty,
+        unitPrice: orderItems.unitPrice,
+        productName: products.name,
+        material: productVariants.material,
+      })
+      .from(orderItems)
+      .innerJoin(productVariants, eq(productVariants.id, orderItems.productVariantId))
+      .innerJoin(products, eq(products.id, productVariants.productId))
+      .where(eq(orderItems.orderId, order.id));
+    const items = lines.map((l) => ({
+      id: l.variantId,
+      price: l.unitPrice,
+      quantity: l.qty,
+      name: l.material ? `${l.productName} - ${l.material}` : l.productName,
+    }));
+    // Midtrans hanya menerima Σ(price × qty) == gross_amount, jadi ongkir dan instalasi jadi item tersendiri.
+    if (shipping > 0) items.push({ id: "SHIPPING", price: shipping, quantity: 1, name: "Ongkos Kirim" });
+    if (installation > 0) items.push({ id: "INSTALLATION", price: installation, quantity: 1, name: "Jasa Instalasi" });
+
+    // Dipanggil di dalam transaksi: gagal → rollback, order tetap draft.
+    const snap = await deps.createTransaction({
+      orderToken: input.order_token,
+      grossAmount: total,
+      items,
+      customer: { email: email!, phone },
+      method: input.payment_method,
+    });
+
+    await tx
+      .update(orders)
+      .set({
+        status: "awaiting_payment",
+        guestEmail: email,
+        guestPhone: phone,
+        shippingAmount: shipping,
+        installationAmount: installation,
+        totalAmount: total,
+        paymentGateway: "midtrans",
+        scheduledDeliveryDate: deliveryDate ?? null,
+        wantsInstallation,
+        updatedAt: sql`now()`,
+      })
+      .where(eq(orders.id, order.id));
+    await tx.insert(orderStatusLogs).values({
+      orderId: order.id,
+      fromStatus: "draft",
+      toStatus: "awaiting_payment",
+      actor: "system",
+    });
+    await tx.insert(paymentTransactions).values({
+      orderId: order.id,
+      gateway: "midtrans",
+      status: "pending",
+      amount: total,
+      requestedMethod: input.payment_method,
+      snapToken: snap.token,
+      snapRedirectUrl: snap.redirect_url,
+    });
+
+    return {
+      order_token: input.order_token,
+      total_amount: total,
+      payment: { gateway: "midtrans", snap_token: snap.token, redirect_url: snap.redirect_url },
+    };
   });
 }

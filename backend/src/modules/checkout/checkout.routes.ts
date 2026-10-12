@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia";
 import { createRateLimiter } from "../../lib/rate-limit";
 import { optionalAuth } from "../auth/auth.guard";
 import { checkoutDocs } from "./checkout.docs";
-import { quoteShipping } from "./checkout.service";
+import { confirm, quoteShipping } from "./checkout.service";
 import { init } from "./stock-reservation.service";
 
 // Dibuat sebagai fungsi (bukan konstanta) supaya setiap aplikasi punya pembatasnya sendiri, seperti authRoutes:
@@ -21,6 +21,9 @@ export function checkoutRoutes() {
   // Hitung ongkir menulis alamat dan quote setiap kali dipanggil, tapi pembeli wajar mengganti alamat berkali-kali.
   const rateLimiter = createRateLimiter(30, 60_000);
   const limitShippingByIp = (ctx: Parameters<typeof ipOf>[0]) => rateLimiter(ipOf(ctx));
+  // Confirm memanggil layanan pihak ketiga (Midtrans) dan menahan kunci order selama itu; batasi per IP.
+  const confirmLimiter = createRateLimiter(20, 60_000);
+  const limitConfirmByIp = (ctx: Parameters<typeof ipOf>[0]) => confirmLimiter(ipOf(ctx));
 
   return (
     new Elysia({ prefix: "/checkout" })
@@ -73,6 +76,30 @@ export function checkoutRoutes() {
             ),
             address_id: t.Optional(t.String({ format: "uuid" })),
             save_address: t.Optional(t.Boolean()),
+          }),
+        },
+      )
+      .post(
+        "/confirm",
+        ({ body, user }) => confirm(body, user?.id ?? null),
+        {
+          beforeHandle: limitConfirmByIp,
+          detail: checkoutDocs.confirm,
+          // Sengaja TIDAK ada field total/ongkir: semua angka dihitung ulang server dari database.
+          body: t.Object({
+            order_token: t.String({ minLength: 1, maxLength: 64 }),
+            contact: t.Optional(
+              t.Object({
+                email: t.Optional(t.String({ format: "email", maxLength: 150 })),
+                phone: t.Optional(t.String({ maxLength: 20 })),
+              }),
+            ),
+            shipping: t.Object({
+              courier: t.String({ minLength: 1, maxLength: 30 }),
+              delivery_date: t.Optional(t.String({ pattern: "^\d{4}-\d{2}-\d{2}$" })),
+            }),
+            wants_installation: t.Optional(t.Boolean()),
+            payment_method: t.Union([t.Literal("qris"), t.Literal("va_bca"), t.Literal("credit_card")]),
           }),
         },
       )

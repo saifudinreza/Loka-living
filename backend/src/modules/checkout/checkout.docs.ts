@@ -89,4 +89,46 @@ export const checkoutDocs = {
       429: { description: "Terlalu sering memanggil (maks 30 permintaan/menit per IP)", content: errorExample("TOO_MANY_REQUESTS", "Terlalu banyak percobaan. Coba lagi sebentar lagi.") },
     },
   },
+  confirm: {
+    tags: ["Checkout"],
+    security: [{} as Record<string, string[]>, { bearerAuth: [] as string[] }],
+    summary: "Hitung total final dan buat transaksi Midtrans Snap",
+    description: [
+      "Langkah terakhir sebelum bayar. Server menghitung **ulang** total dari database: harga item (snapshot order), ongkir dari quote tersimpan (`shipping-rate`), dan biaya instalasi Rp150.000 bila `wants_installation`. Body tidak punya field total atau ongkir; angka dari client tidak dipakai.",
+      "",
+      "- Meminta Midtrans membuat transaksi Snap, lalu mengubah order `draft` → `awaiting_payment`. Kalau Midtrans gagal, order tetap `draft` dan bisa dicoba lagi dengan token yang sama.",
+      "- Dua permintaan bersamaan untuk order yang sama: satu berhasil (200), satu 404.",
+      "- Tamu wajib mengisi `contact.email`; user login boleh mengosongkannya (dipakai email akun).",
+      "- `payment_method`: `qris` | `va_bca` | `credit_card`. `delivery_date` (opsional) harus salah satu dari `available_delivery_dates` hasil `shipping-rate`.",
+      "- Pesan dari Midtrans tidak pernah diteruskan ke client; hanya masuk log server.",
+      "- Respons `Cache-Control: no-store`. Maksimal 20 permintaan per menit per IP.",
+    ].join("\n"),
+    responses: {
+      200: {
+        description: "Transaksi Snap dibuat; arahkan user ke `redirect_url`",
+        content: json({
+          order_token: "kqW3...64 karakter acak...Zx9",
+          total_amount: 2516000,
+          payment: {
+            gateway: "midtrans",
+            snap_token: "66e4fa55-fdac-4ef9-91b5-733b97d1b862",
+            redirect_url: "https://app.sandbox.midtrans.com/snap/v4/redirection/66e4fa55-fdac-4ef9-91b5-733b97d1b862",
+          },
+        }),
+      },
+      401: { description: "Token dikirim tapi tidak valid", content: errorExample("UNAUTHORIZED", "Silakan login dulu.") },
+      404: {
+        description: "`ORDER_NOT_FOUND`: tidak ada, bukan draft (termasuk sudah dikonfirmasi), atau milik user lain",
+        content: errorExample("ORDER_NOT_FOUND", "Pesanan tidak ditemukan."),
+      },
+      410: { description: "Reservasi stok sudah lewat", content: errorExample("RESERVATION_EXPIRED", "Reservasi stok sudah berakhir. Mulai checkout lagi.") },
+      422: {
+        description: "`VALIDATION_FAILED` (termasuk email tamu kosong / tanggal kirim tidak tersedia), `ADDRESS_REQUIRED`, atau `SHIPPING_QUOTE_INVALID`",
+        content: errorExample("SHIPPING_QUOTE_INVALID", "Ongkir sudah tidak berlaku. Hitung ongkir lagi."),
+      },
+      429: { description: "Terlalu sering memanggil (maks 20 permintaan/menit per IP)", content: errorExample("TOO_MANY_REQUESTS", "Terlalu banyak percobaan. Coba lagi sebentar lagi.") },
+      502: { description: "`MIDTRANS_UNAVAILABLE`: Midtrans error atau timeout", content: errorExample("MIDTRANS_UNAVAILABLE", "Layanan pembayaran sedang bermasalah. Coba lagi beberapa saat.") },
+      503: { description: "`PAYMENT_CONFIG_MISSING`: server key Midtrans belum diisi", content: errorExample("PAYMENT_CONFIG_MISSING", "Metode pembayaran sedang tidak tersedia.") },
+    },
+  },
 } satisfies Record<string, DocumentDecoration>;
