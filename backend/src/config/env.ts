@@ -31,6 +31,23 @@ if (jwtAccessSecret.length < 32) {
   throw new Error("JWT_ACCESS_SECRET minimal 32 karakter.");
 }
 
+function nonNegativeInt(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`Variabel environment ${name} harus bilangan bulat >= 0, dapat: "${raw}"`);
+  }
+  return value;
+}
+
+const cookieSecure = bool("COOKIE_SECURE", false);
+// Refresh token ada di cookie. Tanpa atribut Secure ia ikut terkirim lewat HTTP biasa dan bisa disadap. Default false
+// hanya cocok untuk pengembangan lokal, jadi lupa mengaturnya di production harus gagal keras, bukan diam-diam lolos.
+if (process.env.NODE_ENV === "production" && !cookieSecure) {
+  throw new Error("COOKIE_SECURE harus true di production (refresh token tidak boleh dikirim lewat HTTP biasa).");
+}
+
 export const env = {
   PORT: int("PORT", 8000),
   DATABASE_URL: required("DATABASE_URL"),
@@ -41,7 +58,9 @@ export const env = {
   JWT_ACCESS_SECRET: jwtAccessSecret,
   ACCESS_TOKEN_TTL_SECONDS: int("ACCESS_TOKEN_TTL_SECONDS", 900),
   REFRESH_TOKEN_TTL_DAYS: int("REFRESH_TOKEN_TTL_DAYS", 30),
-  COOKIE_SECURE: bool("COOKIE_SECURE", false),
+  COOKIE_SECURE: cookieSecure,
+  // Jumlah reverse proxy tepercaya di depan server (0 = tanpa proxy). Lihat src/lib/client-ip.ts.
+  TRUSTED_PROXY_HOPS: nonNegativeInt("TRUSTED_PROXY_HOPS", 0),
 
   GOOGLE_CLIENT_ID: optional("GOOGLE_CLIENT_ID"),
   GOOGLE_CLIENT_SECRET: optional("GOOGLE_CLIENT_SECRET"),

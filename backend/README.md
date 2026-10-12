@@ -34,7 +34,11 @@ Cek: `curl http://localhost:8000/health` → `{"status":"ok"}`. Dokumentasi inte
 | `ACCESS_TOKEN_TTL_SECONDS`, `REFRESH_TOKEN_TTL_DAYS`, `COOKIE_SECURE` | masa berlaku token, cookie `Secure` di production |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | login Google (kosong = nonaktif, endpoint menjawab 503) |
 | `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION` | pembayaran (kosong = `confirm` menjawab 503 `PAYMENT_CONFIG_MISSING`) |
+| `TRUSTED_PROXY_HOPS` | jumlah reverse proxy tepercaya di depan server (default 0 = tanpa proxy). **Wajib diisi di belakang proxy** (lihat catatan operasional) |
 | `TEST_DATABASE_URL` | opsional, database khusus test (lihat di bawah) |
+
+Di `NODE_ENV=production` server **menolak start** kalau `COOKIE_SECURE` bukan `true` (refresh token ada di cookie dan tidak boleh
+terkirim lewat HTTP biasa). Body request dibatasi 1 MB (`src/config/server.ts`).
 
 Login Google: buat OAuth client "Web application" di Google Cloud Console dengan redirect URI
 `http://localhost:8000/api/auth/google/callback`. Mulai alur dari `http://localhost:8000/api/auth/google` dengan host yang
@@ -103,7 +107,12 @@ Detail kontrak API dan skema: `../TECHNICAL-LokaLiving.md`.
 - **Satu proses.** Job terjadwal (tiap menit melepas reservasi `draft` yang kedaluwarsa; harian membersihkan refresh token
   lama) berjalan di dalam proses server. Dengan beberapa instance, kunci `FOR UPDATE` tetap mencegah stok dilepas dua kali
   (hanya kerja dobel). Rate limit juga di memori per proses.
-- **Di belakang reverse proxy**, alamat IP klien harus diteruskan dengan benar (`X-Forwarded-For`); rate limit memakai IP
-  koneksi.
+- **Di belakang reverse proxy (Nginx, Cloudflare, Railway, dst), set `TRUSTED_PROXY_HOPS`.** Tanpa itu rate limit memakai
+  alamat koneksi, yaitu alamat proxy, sehingga **seluruh pengunjung berbagi satu jatah** (mis. 10 `init` per menit untuk
+  seluruh toko). Dengan `TRUSTED_PROXY_HOPS=1`, IP klien diambil dari ujung kanan `X-Forwarded-For` (entri yang ditambahkan
+  proxy kita); entri di kirinya bisa dipalsukan klien dan tidak dipercaya. Jangan set angka lebih besar dari jumlah proxy
+  sebenarnya, dan pastikan proxy menimpa/menambah header itu.
+- **Risiko yang diketahui (butuh keputusan produk):** satu klien tanpa login bisa menahan seluruh stok lewat `checkout/init`
+  (rate limit menghitung permintaan, bukan jumlah barang). Lihat `tests/security.test.ts` (`test.todo`) untuk daftar lengkap.
 - `order_token` berfungsi seperti kata sandi pesanan tamu: jangan dicatat di log akses.
 - Retensi `payment_transactions.raw_payload` (memuat data pembeli) belum ditentukan; tentukan sebelum production.

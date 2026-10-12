@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { clientIp } from "../../lib/client-ip";
 import { createRateLimiter } from "../../lib/rate-limit";
 import { requireAuth, optionalAuth } from "../auth/auth.guard";
 import { ordersDocs } from "./orders.docs";
@@ -15,7 +16,7 @@ export function ordersRoutes() {
   const limiter = createRateLimiter(DETAIL_LIMIT, WINDOW_MS);
   // Di belakang reverse proxy, IP asli ada di X-Forwarded-For; atur di sana, jangan percaya header dari client.
   const limitByIp = ({ request, server }: { request: Request; server: { requestIP(r: Request): { address: string } | null } | null }) =>
-    limiter(server?.requestIP(request)?.address ?? "unknown");
+    limiter(clientIp({ request, server }));
 
   // Berisi nama, telepon, alamat: jangan sampai tersimpan di cache bersama (CDN/proxy) dan terbaca orang lain.
   const noStore = ({ set }: { set: { headers: Record<string, string | number | undefined> } }) => {

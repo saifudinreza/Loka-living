@@ -168,7 +168,7 @@ function assertAmountMatches(order: OrderRow, payload: MidtransWebhookPayload) {
   const ok = GROSS_AMOUNT_FORMAT.test(payload.gross_amount) && Number(payload.gross_amount) === order.totalAmount;
   if (!ok) {
     console.error(
-      `[midtrans] KRITIS: AMOUNT_MISMATCH untuk order ${order.orderToken}. Payload gross_amount: "${payload.gross_amount}", total di DB: ${order.totalAmount}`,
+      `[midtrans] KRITIS: AMOUNT_MISMATCH untuk order ${order.id}. Payload gross_amount: "${payload.gross_amount}", total di DB: ${order.totalAmount}`,
     );
     throw new AppError(400, "AMOUNT_MISMATCH", "Jumlah pembayaran tidak sesuai dengan total pesanan.");
   }
@@ -249,7 +249,7 @@ async function upsertPaymentTransaction(tx: Transaction, order: OrderRow, payloa
 /** Uang masuk untuk order yang stoknya sudah dilepas: tidak mengubah order, tetapi jejaknya wajib ada di database. */
 async function recordRefundNeeded(tx: Transaction, order: OrderRow, payload: MidtransWebhookPayload) {
   const note = `KRITIS: ${payload.transaction_status} diterima saat order sudah ${order.status}. Uang masuk, stok sudah dilepas: perlu refund manual (transaction ${payload.transaction_id}).`;
-  console.error(`[midtrans] ${note} Order: ${order.orderToken}`);
+  console.error(`[midtrans] ${note} Order: ${order.id}`);
   await tx.insert(orderStatusLogs).values({
     orderId: order.id,
     fromStatus: order.status,
@@ -271,7 +271,7 @@ async function applyTransition(tx: Transaction, order: OrderRow, payload: Midtra
 
   if (!isOrderStatus(order.status) || !isTransitionAllowed(order.status, targetStatus)) {
     console.warn(
-      `[midtrans] Transisi status tidak diizinkan: ${order.status} -> ${targetStatus} (order: ${order.orderToken}). Webhook diabaikan.`,
+      `[midtrans] Transisi status tidak diizinkan: ${order.status} -> ${targetStatus} (order: ${order.id}). Webhook diabaikan.`,
     );
     return;
   }

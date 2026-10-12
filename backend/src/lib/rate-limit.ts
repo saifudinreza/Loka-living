@@ -48,6 +48,9 @@ interface Bucket {
 export function createRateLimiter(max: number, windowMs: number) {
   // Papan catatan: kunci = identitas (IP), nilai = catatannya.
   const buckets = new Map<string, Bucket>();
+  // Sapuan bucket kedaluwarsa paling sering sekali per jendela. Memindai SEMUA bucket di setiap request membuat
+  // biaya tiap request naik sebanding jumlah IP berbeda (penyerang dengan banyak IP memperlambat semua orang).
+  let nextSweep = 0;
 
   /**
    * Alur `hit`, setiap kali ada request:
@@ -63,13 +66,17 @@ export function createRateLimiter(max: number, windowMs: number) {
    *             "waktu palsu" tanpa harus menunggu betulan satu menit
    */
   return function hit(key: string, now = Date.now()): void {
-    // buang bucket kedaluwarsa supaya Map tidak tumbuh tanpa batas
-    for (const [k, b] of buckets) {
-      if (b.resetAt <= now) buckets.delete(k);
+    // buang bucket kedaluwarsa supaya Map tidak tumbuh tanpa batas (paling lama hidup dua jendela)
+    if (now >= nextSweep) {
+      for (const [k, b] of buckets) {
+        if (b.resetAt <= now) buckets.delete(k);
+      }
+      nextSweep = now + windowMs;
     }
 
     const bucket = buckets.get(key);
-    if (!bucket) {
+    // bucket yang sudah lewat jendela tapi belum tersapu diperlakukan seperti tidak ada
+    if (!bucket || bucket.resetAt <= now) {
       buckets.set(key, { count: 1, resetAt: now + windowMs });
       return;
     }
