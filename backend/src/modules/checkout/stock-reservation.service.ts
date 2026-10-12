@@ -9,6 +9,14 @@ import { AppError } from "../../lib/errors";
 
 import { RESERVATION_MINUTES } from "./checkout.constants";
 export { RESERVATION_MINUTES };
+
+/**
+ * Urutan kunci baris varian: harus SAMA di semua jalur (init, commit, release) dan sama dengan `ORDER BY id` di
+ * PostgreSQL, supaya dua transaksi yang butuh varian yang sama tidak saling menunggu (deadlock). Untuk UUID huruf kecil,
+ * urutan kode karakter identik dengan urutan byte uuid di database. Sengaja BUKAN `localeCompare`: hasilnya bergantung
+ * pada locale mesin dan bisa berbeda antar server.
+ */
+export const byCodeUnit = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 /** Batas order `draft` aktif per user login (pengaman penimbunan stok). */
 export const MAX_PENDING_ORDERS = 5;
 const MAX_QTY = 99;
@@ -41,7 +49,7 @@ export async function init(items: InitItem[], userId: string | null) {
   for (const qty of wanted.values()) {
     if (qty > MAX_QTY) throw new AppError(422, "VALIDATION_FAILED", 'Data tidak valid pada field "items".');
   }
-  const lockOrder = [...wanted.keys()].sort();
+  const lockOrder = [...wanted.keys()].sort(byCodeUnit);
 
   return db.transaction(async (tx) => {
     // 2. Batas order draft aktif per user login. Kunci baris user menyerialkan pengecekan ini, sehingga dua init
@@ -186,7 +194,7 @@ export async function release(tx: Transaction, orderId: string): Promise<void> {
   // satu varian bisa muncul lebih dari sekali di order lama: jumlahkan
   const perVariant = new Map<string, number>();
   for (const { variantId, qty } of items) perVariant.set(variantId, (perVariant.get(variantId) ?? 0) + qty);
-  const ids = [...perVariant.keys()].sort();
+  const ids = [...perVariant.keys()].sort(byCodeUnit);
 
   await tx
     .select({ id: productVariants.id })
@@ -222,7 +230,7 @@ export async function commit(tx: Transaction, orderId: string): Promise<void> {
 
   const perVariant = new Map<string, number>();
   for (const { variantId, qty } of items) perVariant.set(variantId, (perVariant.get(variantId) ?? 0) + qty);
-  const ids = [...perVariant.keys()].sort();
+  const ids = [...perVariant.keys()].sort(byCodeUnit);
 
   const locked = await tx
     .select({ id: productVariants.id, reserved: productVariants.stockReserved })
